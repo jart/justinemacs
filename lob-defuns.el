@@ -22,20 +22,13 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
   (let ((fill-column (point-max)))
     (fill-paragraph nil)))
 
-(defun lob/regen-autoloads (&optional force-regen)
+(defun lob/regen-autoloads (&optional force)
   "Regenerate the autoload definitions file if necessary and load it."
   (interactive "P")
-  (let ((autoload-dir (concat dotfiles-dir "/vendor"))
-        (generated-autoload-file autoload-file))
-    (when (or force-regen
-              (not (file-exists-p autoload-file))
-	      ;; TODO: @jart: What is the performance impact of this?
-	      ;; (some (lambda (f) (file-newer-than-file-p f autoload-file))
-              ;;       (directory-files autoload-dir t "\\.el$"))
-              )
-      (message "Updating autoloads...")
-      (let (emacs-lisp-mode-hook)
-        (update-directory-autoloads autoload-dir))))
+  (when (or force (not (file-exists-p autoload-file)))
+    (message "updating autoloads...")
+    (let ((generated-autoload-file autoload-file))
+      (eval (cons 'update-directory-autoloads lob/vendor-dirs))))
   (load autoload-file))
 
 (defun lob/reload ()

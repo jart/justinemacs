@@ -4,9 +4,6 @@ set -x
 mkdir -p vendor
 cd vendor
 
-emacs --batch --eval \
-    "(progn (package-refresh-contents) (package-install 'company))"
-
 [[ ! -d magit ]] && git clone git://github.com/magit/magit.git
 cd magit
 git pull
@@ -16,3 +13,9 @@ cd ..
 cd yasnippet
 git pull
 cd ..
+
+cd ..
+
+emacs --batch --eval "(progn (package-refresh-contents) (package-install 'company))"
+emacs --batch --eval '(progn (load-file "init.el") (lob/recompile))'
+emacs --batch --eval '(progn (load-file "init.el") (lob/regen-autoloads t))'

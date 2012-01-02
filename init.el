@@ -67,11 +67,11 @@
 
 (setq dotfiles-dir (file-name-directory
                     (or (buffer-file-name) load-file-name)))
-(add-to-list 'load-path dotfiles-dir)
-(add-to-list 'load-path (concat dotfiles-dir "vendor"))
-(add-to-list 'load-path (concat dotfiles-dir "vendor/magit"))
-(add-to-list 'load-path (concat dotfiles-dir "vendor/company"))
-(add-to-list 'load-path (concat dotfiles-dir "vendor/yasnippet"))
+(setq lob/vendor-dirs (list dotfiles-dir
+                            (concat dotfiles-dir "vendor")
+                            (concat dotfiles-dir "vendor/magit")
+                            (concat dotfiles-dir "vendor/yasnippet")))
+(dolist (dir lob/vendor-dirs) (add-to-list 'load-path dir))
 (add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
 (setenv "PYTHONPATH" (expand-file-name (concat dotfiles-dir "python")))
 
@@ -83,6 +83,7 @@
 (setq-default c-basic-offset 4)
 (setq-default c-file-style nil)
 (setq-default fill-column 78)
+(setq-default truncate-lines t)
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (fboundp 'tooltip-mode) (tooltip-mode -1))
@@ -107,6 +108,7 @@
       transient-mark-mode t
       make-backup-files nil
       visible-bell nil
+      gdb-many-windows t
       ring-bell-function 'ignore
       echo-keystrokes 0.1
       font-lock-maximum-decoration t
@@ -148,7 +150,6 @@
 (delete-selection-mode 1)
 (show-paren-mode 1)
 
-(require 'saveplace)
 (require 'ffap)
 (require 'uniquify)
 (require 'ansi-color)
@@ -166,6 +167,10 @@
 
 (require 'yasnippet)
 (yas/global-mode 1)
+
+(require 'saveplace)
+(setq-default save-place t)
+(setq save-place-file (concat dotfiles-dir "places"))
 
 (setq rst-adornment-faces-alist (quote ((t . highlight-current-line)
                                         (t . font-lock-keyword-face)
