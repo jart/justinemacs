@@ -85,22 +85,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 (defun lob/turn-off-tool-bar ()
   (tool-bar-mode -1))
 
-(defun lob/insert-date ()
-  "Insert a time-stamp according to locale's date and time format."
-  (interactive)
-  (insert (format-time-string "%c" (current-time))))
-
-(defun lob/lorem ()
-  "Insert a lorem ipsum."
-  (interactive)
-  (insert "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do "
-          "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim"
-          "ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut "
-          "aliquip ex ea commodo consequat. Duis aute irure dolor in "
-          "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
-          "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
-          "culpa qui officia deserunt mollit anim id est laborum."))
-
 (define-key isearch-mode-map (kbd "C-o")
   (lambda () (interactive)
     (let ((case-fold-search isearch-case-fold-search))

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: {% for ... %} ... {% endfor %}
+# key: for
+# --
+{% for $1 %}
+  $0
+{% endfor %}

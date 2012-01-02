@@ -84,6 +84,7 @@
 (setq-default c-file-style nil)
 (setq-default fill-column 78)
 (setq-default truncate-lines t)
+(setq-default save-place t)
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (fboundp 'tooltip-mode) (tooltip-mode -1))
@@ -105,6 +106,7 @@
 (setq frame-title-format '(buffer-file-name "%f  -  lobstermacs2" ("%b"))
       autoload-file (concat dotfiles-dir "loaddefs.el")
       custom-file (concat dotfiles-dir "custom.el")
+      save-place-file (concat dotfiles-dir "places")
       transient-mark-mode t
       make-backup-files nil
       visible-bell nil
@@ -150,6 +152,7 @@
 (delete-selection-mode 1)
 (show-paren-mode 1)
 
+(require 'saveplace)
 (require 'ffap)
 (require 'uniquify)
 (require 'ansi-color)
@@ -167,10 +170,6 @@
 
 (require 'yasnippet)
 (yas/global-mode 1)
-
-(require 'saveplace)
-(setq-default save-place t)
-(setq save-place-file (concat dotfiles-dir "places"))
 
 (setq rst-adornment-faces-alist (quote ((t . highlight-current-line)
                                         (t . font-lock-keyword-face)

@@ -27,8 +27,8 @@
 
      ;; these bindings make paredit feel less buggy
      (define-key paredit-mode-map (kbd "C-d") 'paredit-forward-delete)
-     (define-key paredit-mode-map (kbd "C-M-h") 'paredit-backward-kill-word)
      (define-key paredit-mode-map (kbd "<DEL>") 'paredit-backward-delete)
+     (define-key paredit-mode-map (kbd "C-M-h") 'paredit-backward-kill-word)
      (define-key paredit-mode-map (kbd ")") 'lob/paredit-close-parenthesis)))
 
 (provide 'lob-lisp)

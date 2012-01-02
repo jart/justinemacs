@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: (current time)
+# key: date
+# condition: 'force-in-comment
+# --
+`(format-time-string "%c" (current-time))`
