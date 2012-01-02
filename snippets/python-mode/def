@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: def func(...): ...
+# key: def
+# --
+def ${1:funk_name}($2):
+    ${3:"""${4:documentation (press C-d to remove me)}
+    """
+    }`yas/selected-text`$0

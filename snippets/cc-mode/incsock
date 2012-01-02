@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: berkley socket includes
+# key: incsock
+# --
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <netdb.h>

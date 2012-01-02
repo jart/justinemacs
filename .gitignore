@@ -1,0 +1,13 @@
+custom.el
+loaddefs.el*
+abbrev_defs
+auto-save-list
+*.elc
+places
+session.*
+tramp
+\#*
+*.beam
+*.pyc
+/elpa
+/vendor

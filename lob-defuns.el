@@ -1,0 +1,145 @@
+;;; lob-defuns.el
+
+(defmacro lob/nevar-fail (primary failover)
+  "Runs primary code.  If primary code fails, then executes
+  failover code."
+  `(condition-case exc
+       ,primary
+     ('error
+      (message (format "Caught exception: [%s]" exc))
+      ,failover)))
+
+(defun lob/sudo (&optional path)
+  (interactive)
+  (find-alternate-file
+   (concat "/sudo:root@localhost:" (or path buffer-file-name))))
+
+(defun lob/unfill-paragraph ()
+  "The opposite of fill-paragraph. Takes a multi-line paragraph
+and makes it into a single line of text.  Thanks: Stefan Monnier
+<foo at acm.org>"
+  (interactive)
+  (let ((fill-column (point-max)))
+    (fill-paragraph nil)))
+
+(defun lob/regen-autoloads (&optional force-regen)
+  "Regenerate the autoload definitions file if necessary and load it."
+  (interactive "P")
+  (let ((autoload-dir (concat dotfiles-dir "/vendor"))
+        (generated-autoload-file autoload-file))
+    (when (or force-regen
+              (not (file-exists-p autoload-file))
+	      ;; TODO: @jart: What is the performance impact of this?
+	      ;; (some (lambda (f) (file-newer-than-file-p f autoload-file))
+              ;;       (directory-files autoload-dir t "\\.el$"))
+              )
+      (message "Updating autoloads...")
+      (let (emacs-lisp-mode-hook)
+        (update-directory-autoloads autoload-dir))))
+  (load autoload-file))
+
+(defun lob/reload ()
+  "Save the .emacs buffer if needed, then reload .emacs."
+  (interactive)
+  (let ((dot-emacs (concat dotfiles-dir "/init.el")))
+    (and (get-file-buffer dot-emacs)
+         (save-buffer (get-file-buffer dot-emacs)))
+    (load-file dot-emacs))
+  (message "Re-initialized!"))
+
+(defun lob/recompile ()
+  "Recompiles everything so emacs loads wicked fast"
+  (interactive)
+  (lob/regen-autoloads t)
+  (byte-recompile-directory dotfiles-dir 0)
+  (byte-recompile-directory (concat dotfiles-dir "/vendor") 0))
+
+(defun lob/cleanup-buffer ()
+  "Perform a bunch of operations on the whitespace content of a buffer."
+  (interactive)
+  (indent-region (point-min) (point-max))
+  (untabify (point-min) (point-max))
+  (delete-trailing-whitespace))
+
+(defun lob/recentf-ido-find-file ()
+  "Find a recent file using ido."
+  (interactive)
+  (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
+    (when file
+      (find-file file))))
+
+(defun lob/run-coding-hook ()
+  "Enable things that are convenient across all coding buffers."
+  (run-hooks 'lob/coding-hook))
+
+(defun lob/pretty-lambdas ()
+  (font-lock-add-keywords
+   nil `(("(?\\(lambda\\>\\)"
+          (0 (progn (compose-region (match-beginning 1) (match-end 1)
+                                    ,(make-char 'greek-iso8859-7 107))
+                    nil))))))
+
+(defun lob/local-comment-auto-fill ()
+  (set (make-local-variable 'comment-auto-fill-only-comments) t)
+  (auto-fill-mode t))
+
+(defun lob/turn-on-paredit ()
+  (paredit-mode t))
+
+(defun lob/turn-on-company ()
+  (company-mode t))
+
+(defun lob/turn-off-tool-bar ()
+  (tool-bar-mode -1))
+
+(defun lob/insert-date ()
+  "Insert a time-stamp according to locale's date and time format."
+  (interactive)
+  (insert (format-time-string "%c" (current-time))))
+
+(defun lob/lorem ()
+  "Insert a lorem ipsum."
+  (interactive)
+  (insert "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do "
+          "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim"
+          "ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut "
+          "aliquip ex ea commodo consequat. Duis aute irure dolor in "
+          "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla "
+          "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in "
+          "culpa qui officia deserunt mollit anim id est laborum."))
+
+(define-key isearch-mode-map (kbd "C-o")
+  (lambda () (interactive)
+    (let ((case-fold-search isearch-case-fold-search))
+      (occur (if isearch-regexp isearch-string
+               (regexp-quote isearch-string))))))
+
+(defun lob/face-at-point ()
+  "Tells me who is responsible for ugly color under cursor"
+  (interactive)
+  (message "%S: %s" (face-at-point)
+           (face-documentation (face-at-point))))
+
+(defun lob/paredit-close-parenthesis ()
+  "How do you expect me to rebalance my parens if you won't let
+  me type omg!"
+  (interactive)
+  (lob/nevar-fail (paredit-close-parenthesis)
+                  (insert ")")))
+
+(defun lob/paredit-close-parenthesis-and-newline ()
+  "How do you expect me to rebalance my parens if you won't let
+  me type omg!"
+  (interactive)
+  (lob/nevar-fail (paredit-close-parenthesis-and-newline)
+                  (insert ")")))
+
+(defun lob/remove-elc-on-save ()
+  "If you're saving an elisp file, likely the .elc is no longer valid."
+  (make-local-variable 'after-save-hook)
+  (add-hook 'after-save-hook
+            (lambda ()
+              (if (file-exists-p (concat buffer-file-name "c"))
+                  (delete-file (concat buffer-file-name "c"))))))
+
+(provide 'lob-defuns)

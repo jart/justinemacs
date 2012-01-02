@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: Property Method
+# key: prop
+# --
+@property
+def ${1:some_val}(self):
+    ${2:"""${3:documentation (press C-d to remove me)}
+    """
+    }return self.$0

@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# name: class
+# key: class
+# --
+class ${1:KlassName}(${2:object}):
+    ${3:"""${4:documentation (press C-d to remove me)}
+    """
+
+    }${5:foo = 'bar' # press C-d to remove me
+
+    }def __init__(self$6):
+    	${7:"""${8:documentation (press C-d to remove me)}
+	"""
+	}${0:pass}

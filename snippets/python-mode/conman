@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# name: Context Manager
+# key: conman
+# --
+class ${1:context_manager}(object):
+    ${2:"""${3:documentation (press C-d to remove me)}
+    """
+
+    }${4:foo = 'bar'
+
+    }def __init__(self$5):
+    	${6:"""$7
+	"""
+	}${8:pass}
+
+    def __enter__(self):
+        ${10:pass}
+
+    def __exit__(self, type_, value, traceback):
+        ${10:pass}
