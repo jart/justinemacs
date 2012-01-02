@@ -1,10 +1,10 @@
 .. -*-rst-*-
 
-==============
- lobstermacs2
-==============
+=============
+ justinemacs
+=============
 
-:name:        lobstermacs2
+:name:        justinemacs
 :description: My Emacs Configuration
 :copyright:   © 2011 Justine Alexandra Roberts Tunney
 :license:     Licensed MIT
@@ -31,4 +31,7 @@ Install bleeding edge emacs from repository::
 
 Install this project::
 
-    git clone 
+    git clone git://github.com/jart/justinemacs ~/.emacs.d
+    cd ~/.emacs.d
+    ./vendor.sh
+    emacs
