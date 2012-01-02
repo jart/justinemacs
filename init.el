@@ -70,6 +70,7 @@
 (add-to-list 'load-path dotfiles-dir)
 (add-to-list 'load-path (concat dotfiles-dir "vendor"))
 (add-to-list 'load-path (concat dotfiles-dir "vendor/magit"))
+(add-to-list 'load-path (concat dotfiles-dir "vendor/company"))
 (add-to-list 'load-path (concat dotfiles-dir "vendor/yasnippet"))
 (add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
 (setenv "PYTHONPATH" (expand-file-name (concat dotfiles-dir "python")))

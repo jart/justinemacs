@@ -10,4 +10,6 @@ tramp
 *.beam
 *.pyc
 /elpa
-/vendor
+/vendor/magit
+/vendor/company
+/vendor/yasnippet
