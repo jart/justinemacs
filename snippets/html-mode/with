@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: {% with ... %} ... {% endwith %}
+# key: with
+# --
+{% with $1=$2 %}
+  $0
+{% endwith %}
