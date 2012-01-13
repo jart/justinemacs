@@ -103,7 +103,7 @@
       ido-use-filename-at-point 'guess
       ido-max-prospects 10)
 
-(setq frame-title-format '(buffer-file-name "%f  -  lobstermacs2" ("%b"))
+(setq frame-title-format '(buffer-file-name "%f - justinemacs" ("%b"))
       autoload-file (concat dotfiles-dir "loaddefs.el")
       custom-file (concat dotfiles-dir "custom.el")
       save-place-file (concat dotfiles-dir "places")
