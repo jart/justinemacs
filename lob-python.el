@@ -34,8 +34,8 @@ directory (as well as sub-directories.)"
      (define-key python-mode-map (kbd "<return>") 'newline-and-indent)
      (define-key python-mode-map (kbd "C-c c") 'lob/python-check)
      (define-key python-mode-map (kbd "C-c C") 'lob/python-check-dir)
+     (define-key python-mode-map (kbd "C-c l") "lambda")
      (define-key python-mode-map (kbd "M-/") 'hippie-expand)
-     (define-key lisp-mode-shared-map (kbd "C-c l") "lambda")
      (ad-activate 'python-calculate-indentation)
      (add-hook 'python-mode-hook 'lob/run-coding-hook)))
 
