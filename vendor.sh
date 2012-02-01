@@ -14,6 +14,11 @@ cd yasnippet
 git pull
 cd ..
 
+[[ ! -d coffee-mode ]] && git clone git://github.com/defunkt/coffee-mode.git
+cd coffee-mode
+git pull
+cd ..
+
 cd ..
 
 emacs --batch --eval "(progn (package-refresh-contents) (package-install 'company))"

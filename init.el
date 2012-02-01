@@ -70,7 +70,8 @@
 (setq lob/vendor-dirs (list dotfiles-dir
                             (concat dotfiles-dir "vendor")
                             (concat dotfiles-dir "vendor/magit")
-                            (concat dotfiles-dir "vendor/yasnippet")))
+                            (concat dotfiles-dir "vendor/yasnippet")
+                            (concat dotfiles-dir "vendor/coffee-mode")))
 (dolist (dir lob/vendor-dirs) (add-to-list 'load-path dir))
 (add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
 (setenv "PYTHONPATH" (expand-file-name (concat dotfiles-dir "python")))
