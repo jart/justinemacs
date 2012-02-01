@@ -180,3 +180,5 @@
                                         (4 . font-lock-keyword-face)
                                         (5 . font-lock-keyword-face)
                                         (6 . font-lock-keyword-face))))
+
+(add-to-list 'auto-mode-alist '("\\.less$" . css-mode))
