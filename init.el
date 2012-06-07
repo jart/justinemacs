@@ -156,14 +156,6 @@
 (delete-selection-mode 1)
 (show-paren-mode 1)
 
-;; make the status line sexy
-(require 'cl)
-(require 'powerline)
-(setq powerline-arrow-shape 'arrow14)
-(custom-set-faces
- '(mode-line ((t (:foreground "#030303" :background "#bdbdbd" :box nil))))
- '(mode-line-inactive ((t (:foreground "#f9f9f9" :background "#666666" :box nil)))))
-
 (require 'saveplace)
 (require 'ffap)
 (require 'uniquify)
@@ -179,6 +171,14 @@
 (add-hook 'lob/coding-hook 'lob/pretty-lambdas)
 
 (load-theme 'zenburn t)
+
+;; ;; make the status line sexy
+;; (require 'cl)
+;; (require 'powerline)
+;; (setq powerline-arrow-shape 'arrow14)
+;; (custom-set-faces
+;;  '(mode-line ((t (:foreground "#030303" :background "#bdbdbd" :box nil))))
+;;  '(mode-line-inactive ((t (:foreground "#f9f9f9" :background "#666666" :box nil)))))
 
 (require 'yasnippet)
 (yas/global-mode 1)
