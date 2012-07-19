@@ -19,11 +19,6 @@ cd coffee-mode
 git pull
 cd ..
 
-[[ ! -d emacs-powerline ]] && git clone git://github.com/jart/emacs-powerline.git
-cd emacs-powerline
-git pull
-cd ..
-
 cd ..
 
 emacs --batch --eval "(progn (package-refresh-contents) (package-install 'company))"

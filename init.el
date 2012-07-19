@@ -71,7 +71,6 @@
                             (concat dotfiles-dir "vendor")
                             (concat dotfiles-dir "vendor/magit")
                             (concat dotfiles-dir "vendor/yasnippet")
-                            (concat dotfiles-dir "vendor/emacs-powerline")
                             (concat dotfiles-dir "vendor/coffee-mode")))
 (dolist (dir lob/vendor-dirs) (add-to-list 'load-path dir))
 (add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
@@ -171,14 +170,6 @@
 (add-hook 'lob/coding-hook 'lob/pretty-lambdas)
 
 (load-theme 'zenburn t)
-
-;; ;; make the status line sexy
-;; (require 'cl)
-;; (require 'powerline)
-;; (setq powerline-arrow-shape 'arrow14)
-;; (custom-set-faces
-;;  '(mode-line ((t (:foreground "#030303" :background "#bdbdbd" :box nil))))
-;;  '(mode-line-inactive ((t (:foreground "#f9f9f9" :background "#666666" :box nil)))))
 
 (require 'yasnippet)
 (yas/global-mode 1)
