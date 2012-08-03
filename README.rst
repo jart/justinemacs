@@ -13,20 +13,19 @@
 Introduction
 ============
 
-Build dependencies if you want *all* the emacs 24 bells and whistles::
+Here's how to build emacs24::
 
     sudo apt-get install \
-        bzr ispell git-core libgtk-3-dev libxpm-dev texinfo librsvg2-dev \
+        ispell git-core libgtk-3-dev libxpm-dev texinfo librsvg2-dev \
         libgif-dev libjpeg62-dev libpng12-dev libtiff4-dev imagemagick \
         libdbus-1-dev libasound2 libgconf2-dev libfreetype6-dev libotf-dev \
         libm17n-dev libgnutls-dev libgpm-dev libxft-dev libxml2-dev \
         libmagickwand-dev
-
-Install bleeding edge emacs from repository::
-
-    bzr branch bzr://bzr.savannah.gnu.org/emacs/trunk emacs
-    ./configure --with-x-toolkit=gtk3
-    make -j4
+    wget http://ftp.gnu.org/pub/gnu/emacs/emacs-24.1.tar.gz
+    tar -xvzf emacs-24.1.tar.gz
+    cd emacs-24.1
+    ./configure
+    make -j2
     sudo make install
 
 Install this project::

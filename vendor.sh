@@ -14,7 +14,7 @@ cd yasnippet
 git pull
 cd ..
 
-[[ ! -d coffee-mode ]] && git clone git://github.com/defunkt/coffee-mode.git
+[[ ! -d coffee-mode ]] && git clone git://github.com/jart/coffee-mode.git
 cd coffee-mode
 git pull
 cd ..
