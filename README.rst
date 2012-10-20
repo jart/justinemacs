@@ -21,9 +21,9 @@ Here's how to build emacs24::
         libdbus-1-dev libasound2 libgconf2-dev libfreetype6-dev libotf-dev \
         libm17n-dev libgnutls-dev libgpm-dev libxft-dev libxml2-dev \
         libmagickwand-dev
-    wget http://ftp.gnu.org/pub/gnu/emacs/emacs-24.1.tar.gz
-    tar -xvzf emacs-24.1.tar.gz
-    cd emacs-24.1
+    wget http://ftp.gnu.org/pub/gnu/emacs/emacs-24.2.tar.gz
+    tar -xvzf emacs-24.2.tar.gz
+    cd emacs-24.2
     ./configure
     make -j2
     sudo make install
