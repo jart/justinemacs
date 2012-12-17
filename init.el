@@ -188,3 +188,7 @@
 (add-to-list 'auto-mode-alist '("\\.clj$" . emacs-lisp-mode))
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
+
+(eval-after-load 'go-mode
+  '(progn
+     (define-key go-mode-map (kbd "<return>") 'newline-and-indent)))
