@@ -1,7 +1,8 @@
 # -*- mode: snippet -*-
 # name: for (...; ...; ...) { ... }
 # key: for
+# expand-env: ((yas/indent-line 'auto))
 # --
-for (${1:n} = ${2:0}; ${3:$1 < l}; ${4:$1++}) {
-	`yas/selected-text`$0
+for (${1:n} = ${2:0}; ${3:$1 < l}; ${4:++$1}) {
+  $0
 }

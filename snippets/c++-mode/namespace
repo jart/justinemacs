@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: namespace ...
+# key: ns
+# contributor: Justine Tunney <jtunney@gmail.com>
+#
+# This snippet tries to guess your namespace by looking at the name of the
+# project root folder (the directory below src/include).
+#
+# --
+namespace ${1:`(let ((path (file-name-sans-extension (buffer-file-name))))
+                 (downcase
+                  (replace-regexp-in-string
+                   "[^a-z]" "" (if (string-match "/\\\([^/]+\\\)/\\\(includes?\\\|src\\\)/" path)
+                                   (match-string 1 path)
+                                 (file-name-nondirectory path)))))`} {
+
+$0
+
+}  // namespace $1

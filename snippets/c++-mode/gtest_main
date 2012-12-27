@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: Google Test main()
+# key: gtest_main
+# expand-env: ((yas/indent-line 'auto))
+# --
+int main(int argc, char** argv) {
+  testing::InitGoogleTest(&argc, argv);
+  testing::FLAGS_gtest_death_test_style = "threadsafe";
+  return RUN_ALL_TESTS();
+}

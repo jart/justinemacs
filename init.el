@@ -172,7 +172,8 @@
 (load-theme 'zenburn t)
 
 (require 'yasnippet)
-(yas/global-mode 1)
+(yas-global-mode 1)
+(setq yas/root-directory (list (concat dotfiles-dir "snippets")))
 
 (setq rst-adornment-faces-alist (quote ((t . highlight-current-line)
                                         (t . font-lock-keyword-face)

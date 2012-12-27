@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name: Google main()
+# key: google_main
+# expand-env: ((yas/indent-line 'auto))
+# --
+int main(int argc, char** argv) {
+  google::SetUsageMessage(PACKAGE_NAME " [FLAGS]");
+  google::SetVersionString(VERSION);
+  google::ParseCommandLineFlags(&argc, &argv, true);
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
+
+  $0
+
+  return 0;
+}

@@ -1,0 +1,13 @@
+# -*- mode: snippet -*-
+# name: class ... { ... }
+# key: class
+# expand-env: ((yas/indent-line 'auto))
+# contributor: Justine Tunney <jtunney@gmail.com>
+# --
+class ${1:Name} {
+ public:
+  ${1:$(yas/substr text "[^: ]*")}($2);
+
+ private:$0
+  DISALLOW_COPY_AND_ASSIGN(${1:$(yas/substr text "[^: ]*")});
+};

@@ -1,8 +1,6 @@
 # -*- mode: snippet -*-
-# name: if (...) { ... }
-# key: if
+# name: std::unique_ptr
+# key: up
 # expand-env: ((yas/indent-line 'auto))
 # --
-if (${1:condition}) {
-  $0
-}
+std::unique_ptr<$1> $2($0);

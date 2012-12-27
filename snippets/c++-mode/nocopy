@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: #define DISALLOW_COPY_AND_ASSIGN
+# key: nocopy
+# expand-env: ((yas/indent-line 'auto))
+# --
+// A macro to disallow the copy constructor and operator= functions
+// This should be used in the private: declarations for a class
+#define $0DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(const TypeName&);               \
+  void operator=(const TypeName&)

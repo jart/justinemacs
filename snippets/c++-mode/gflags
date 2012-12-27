@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: #include <gflags/gflags.h>
+# key: gflags
+# --
+#include <gflags/gflags.h>

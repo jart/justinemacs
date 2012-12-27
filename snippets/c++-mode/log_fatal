@@ -1,8 +1,6 @@
 # -*- mode: snippet -*-
-# name: if (...) { ... }
-# key: if
+# name: LOG(FATAL) << "...";
+# key: fatal
 # expand-env: ((yas/indent-line 'auto))
 # --
-if (${1:condition}) {
-  $0
-}
+LOG(FATAL) << "$1";

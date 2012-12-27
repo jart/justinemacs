@@ -1,0 +1,15 @@
+# -*- mode: snippet -*-
+# name: Style Comment for Emacs/VIM
+# key: style
+# contributor: Justine Tunney <jtunney@gmail.com>
+# --
+// For Emacs:
+// Local Variables:
+// mode:c++
+// indent-tabs-mode:`(format "%S" indent-tabs-mode)`
+// tab-width:`(format "%S" tab-width)`
+// c-basic-offset:`(format "%S" c-basic-offset)`
+// c-file-style: `(format "%S" c-file-style)`
+// End:
+// For VIM:
+// vim:set `(if indent-tabs-mode "" "expandtab ")`softtabstop=`(format "%S" c-basic-offset)` shiftwidth=`(format "%S" c-basic-offset)` tabstop=`(format "%S" tab-width)`:
