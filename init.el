@@ -184,6 +184,7 @@
                                         (5 . font-lock-keyword-face)
                                         (6 . font-lock-keyword-face))))
 
+(add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
 (add-to-list 'auto-mode-alist '("\\.php$" . html-mode))
 (add-to-list 'auto-mode-alist '("\\.less$" . css-mode))
 (add-to-list 'auto-mode-alist '("\\.clj$" . emacs-lisp-mode))
