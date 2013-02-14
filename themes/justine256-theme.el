@@ -61,6 +61,7 @@ Semantic, and Ansi-Color faces are included.")
    `(cursor ((,class (:background ,butter-1))))
    ;; Highlighting faces
    `(fringe ((,class (:background ,alum-7))))
+   `(match ((,class (:foreground ,alum-6 :background ,butter-2))))
    `(highlight ((,class (:foreground ,alum-6 :background ,butter-2))))
    `(region ((,class (:background ,alum-5))))
    `(secondary-selection ((,class (:background ,blue-3))))
