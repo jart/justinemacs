@@ -139,6 +139,11 @@ Semantic, and Ansi-Color faces are included.")
    ;; Flyspell faces
    `(flyspell-duplicate ((,class (:underline ,orange-1))))
    `(flyspell-incorrect ((,class (:underline ,red-1))))
+   ;; whitespace-mode
+   `(whitespace-space ((t (:foreground "#333" :background nil))))
+   `(whitespace-tab ((t (:foreground "#333" :background nil))))
+   `(whitespace-newline ((t (:foreground "#333" :background nil))))
+   `(whitespace-line ((t (:background "gray30" :foreground nil))))
    ;; Semantic faces
    `(semantic-decoration-on-includes ((,class (:underline ,alum-4))))
    `(semantic-decoration-on-private-members-face
