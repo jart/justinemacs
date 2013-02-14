@@ -411,12 +411,12 @@
    `(slime-repl-inputed-output-face ((,class (:foreground ,zenburn-red))))
 
    ;; whitespace-mode
-   `(whitespace-space ((,class (:background ,zenburn-bg :foreground ,zenburn-bg+1))))
-   `(whitespace-hspace ((,class (:background ,zenburn-bg :foreground ,zenburn-bg+1))))
-   `(whitespace-tab ((,class (:background ,zenburn-bg :foreground ,zenburn-red))))
-   `(whitespace-newline ((,class (:foreground ,zenburn-bg+1))))
-   `(whitespace-trailing ((,class (:foreground ,zenburn-red :background ,zenburn-bg))))
-   `(whitespace-line ((,class (:background ,zenburn-bg-05 :foreground ,zenburn-magenta))))
+   `(whitespace-space ((t (:foreground ,zenburn-bg+1 :background nil))))
+   `(whitespace-hspace ((t (:foreground ,zenburn-bg+1 :background nil))))
+   `(whitespace-tab ((t (:foreground ,zenburn-bg+1 :background nil))))
+   `(whitespace-newline ((t (:foreground ,zenburn-bg+1 :background nil))))
+   `(whitespace-trailing ((,class (:foreground ,zenburn-red :background nil))))
+   `(whitespace-line ((t (:background ,zenburn-bg+1 :foreground ,zenburn-fg))))
    `(whitespace-space-before-tab ((,class (:background ,zenburn-orange :foreground ,zenburn-orange))))
    `(whitespace-indentation ((,class (:background ,zenburn-yellow, :foreground ,zenburn-red))))
    `(whitespace-empty ((,class (:background ,zenburn-yellow :foreground ,zenburn-red))))

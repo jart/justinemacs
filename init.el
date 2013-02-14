@@ -1,7 +1,8 @@
 ;;; init.el
 
-(set-frame-font "DejaVu Sans Mono-7")
-(add-to-list 'default-frame-alist '(font . "DejaVu Sans Mono-7"))
+(let ((myfont "DejaVu Sans Mono-7"))
+  (set-frame-font myfont)
+  (add-to-list 'default-frame-alist (cons 'font myfont)))
 
 (global-set-key (kbd "C-v") 'pager-page-down)
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
@@ -63,7 +64,8 @@
       (global-set-key (kbd "C-x C-h") 'help)
       (global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
       (global-set-key (kbd "C-x C-g") 'grep-find)
-      (global-set-key (kbd "C-x b") 'ibuffer)))
+      (global-set-key (kbd "C-x b") 'ibuffer)
+      (global-unset-key (kbd "C-/"))))
 
 (setq dotfiles-dir (file-name-directory
                     (or (buffer-file-name) load-file-name)))
@@ -80,10 +82,10 @@
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
-(setq-default c-basic-offset 4)
+(setq-default tab-width 2)
+(setq-default c-basic-offset 2)
 (setq-default c-file-style nil)
-(setq-default fill-column 78)
+(setq-default fill-column 79)
 (setq-default truncate-lines t)
 (setq-default save-place t)
 (setq-default css-indent-offset 2)
@@ -126,9 +128,6 @@
       require-final-newline t
       truncate-partial-width-windows nil
       uniquify-buffer-name-style 'forward
-      whitespace-style '(trailing lines space-before-tab
-                                  indentation space-after-tab)
-      whitespace-line-column 100
       ediff-window-setup-function 'ediff-setup-windows-plain
       lob/is-windows (not (null (memq system-type '(ms-dos windows-nt cygwin))))
       lob/is-unix (not (null (memq system-type
@@ -155,6 +154,13 @@
 (delete-selection-mode 1)
 (show-paren-mode 1)
 
+;; This asks emacs to complain when I use tabs, break the 80 character rule,
+;; or insert trailing whitespace.
+(require 'whitespace)
+(setq whitespace-style '(face empty tabs tab-mark lines-tail trailing))
+(setq whitespace-line-column 80)
+(global-whitespace-mode 1)
+
 (require 'saveplace)
 (require 'ffap)
 (require 'uniquify)
@@ -169,7 +175,26 @@
 
 (add-hook 'lob/coding-hook 'lob/pretty-lambdas)
 
-(load-theme 'zenburn t)
+(if (and (not window-system)
+         (string= (getenv "TERM") "xterm-256color"))
+    (load-theme 'justine256 t)
+  (load-theme 'zenburn t))
+
+;; (load-theme 'zenburn t)
+;; (load-theme 'justine256 t)
+;; (load-theme 'adwaita t)
+;; (load-theme 'deeper-blue t)
+;; (load-theme 'dichromacy t)
+;; (load-theme 'light-blue t)
+;; (load-theme 'manoj-dark t)
+;; (load-theme 'misterioso t)
+;; (load-theme 'tango t)
+;; (load-theme 'tango-dark t)
+;; (load-theme 'tsdh-light t)
+;; (load-theme 'tsdh-dark t)
+;; (load-theme 'wheatgrass t)
+;; (load-theme 'whiteboard t)
+;; (load-theme 'wombat t)
 
 (require 'yasnippet)
 (yas-global-mode 1)
@@ -194,3 +219,5 @@
 (eval-after-load 'go-mode
   '(progn
      (define-key go-mode-map (kbd "<return>") 'newline-and-indent)))
+
+(server-start)
