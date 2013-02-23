@@ -80,17 +80,17 @@
 (prefer-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 2)
-(setq-default c-basic-offset 2)
-(setq-default c-file-style nil)
-(setq-default fill-column 79)
-(setq-default truncate-lines t)
-(setq-default save-place t)
-(setq-default css-indent-offset 2)
-(setq-default coffee-tab-width 2)
-(setq-default sh-basic-offset 2)
-(setq-default sh-indentation 2)
+(setq-default indent-tabs-mode nil
+              tab-width 2
+              c-basic-offset 2
+              c-file-style nil
+              fill-column 79
+              truncate-lines t
+              save-place t
+              css-indent-offset 2
+              coffee-tab-width 2
+              sh-basic-offset 2
+              sh-indentation 2)
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (fboundp 'tooltip-mode) (tooltip-mode -1))
