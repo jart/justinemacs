@@ -89,6 +89,8 @@
 (setq-default save-place t)
 (setq-default css-indent-offset 2)
 (setq-default coffee-tab-width 2)
+(setq-default sh-basic-offset 2)
+(setq-default sh-indentation 2)
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (fboundp 'tooltip-mode) (tooltip-mode -1))
