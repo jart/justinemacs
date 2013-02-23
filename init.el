@@ -76,7 +76,6 @@
                             (concat dotfiles-dir "vendor/coffee-mode")))
 (dolist (dir lob/vendor-dirs) (add-to-list 'load-path dir))
 (add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
-(setenv "PYTHONPATH" (expand-file-name (concat dotfiles-dir "python")))
 
 (prefer-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
