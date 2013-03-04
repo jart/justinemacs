@@ -16,9 +16,9 @@
                 (replace-regexp-in-string
                  "/" "_" (if (string-match "/\\\(src\\\|includes?\\\)/\\\(.+\\\)$" path)
                              (match-string 2 path)
-                           (file-name-nondirectory path)))))`_H_}
-#define $1
+                           (file-name-nondirectory path)))))`}_H_
+#define $1_H_
 
 $0
 
-#endif  // $1
+#endif  // $1_H_

@@ -1,7 +1,11 @@
 ;;; lob-c.el
 
-(defun lob/on-c-mode-common-hook ()
+(eval-when-compile (require 'cc-mode))
+
+(defun lob/c-mode-common-hook ()
   (define-key c-mode-base-map (kbd "C-c C-c") 'compile)
+  (define-key c-mode-base-map (kbd "C-c C-d") 'disaster)
+  (define-key c-mode-base-map (kbd "C-c C-h") 'ff-find-other-file)
   (define-key c-mode-base-map (kbd "C-<return>") 'c-indent-new-comment-line)
   (define-key c-mode-base-map (kbd "C-M-h") 'backward-kill-word))
 
@@ -28,7 +32,7 @@
   '(progn
      (add-hook 'c-mode-common-hook 'google-set-c-style)
      (add-hook 'c-mode-common-hook 'google-make-newline-indent)
-     (add-hook 'c-mode-common-hook 'lob/on-c-mode-common-hook)
+     (add-hook 'c-mode-common-hook 'lob/c-mode-common-hook)
      (add-hook 'c++-mode-hook 'lob/c++-mode-hook)))
 
 (provide 'lob-c)

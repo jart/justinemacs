@@ -32,6 +32,7 @@ directory (as well as sub-directories.)"
 (eval-after-load 'python
   '(progn
      (define-key python-mode-map (kbd "<return>") 'newline-and-indent)
+     (define-key python-mode-map (kbd "RET") 'newline-and-indent)
      (define-key python-mode-map (kbd "C-c c") 'lob/python-check)
      (define-key python-mode-map (kbd "C-c C") 'lob/python-check-dir)
      (define-key python-mode-map (kbd "C-c l") "lambda")

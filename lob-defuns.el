@@ -1,5 +1,8 @@
 ;;; lob-defuns.el
 
+(eval-when-compile (require 'paredit))
+(eval-when-compile (require 'company))
+
 (defmacro lob/nevar-fail (primary failover)
   "Runs primary code.  If primary code fails, then executes
   failover code."
@@ -118,5 +121,12 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
             (lambda ()
               (if (file-exists-p (concat buffer-file-name "c"))
                   (delete-file (concat buffer-file-name "c"))))))
+
+;; (defun lob/remove-from-list-and-sublists (remove-item list)
+;;   (loop for item in list
+;;         if (not (equal item remove-item))
+;;         collect (if (listp item)
+;;                     (lob/remove-from-list-and-sublists remove-item item)
+;;                   item)))
 
 (provide 'lob-defuns)

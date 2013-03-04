@@ -1,5 +1,8 @@
 ;;; lob-lisp.el
 
+(eval-when-compile (require 'lisp-mode))
+(eval-when-compile (require 'paredit))
+
 (eval-after-load 'lisp-mode
   '(progn
      (define-key read-expression-map (kbd "TAB") 'lisp-complete-symbol)
