@@ -60,7 +60,10 @@
 
 (if (string= (getenv "USER") "jart")
     (progn
-      (global-set-key (kbd "C-u") ctl-x-map)
+      (keyboard-translate ?\C-u ?\C-x)
+      (keyboard-translate ?\C-x ?\C-u)
+      ;; (global-set-key (kbd "C-u") ctl-x-map)
+      ;; (global-set-key (kbd "C-x") 'universal-argument)
       (global-set-key (kbd "C-h") 'delete-backward-char)
       (global-set-key (kbd "M-h") 'backward-kill-word)
       (global-set-key (kbd "C-x C-h") 'help)
