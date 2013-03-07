@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: condition-case logging nil guard (safe)
+# key: safe
+# contributor: Justine Tunney <jtunney@gmail.com>
+# --
+(condition-case exc
+    $0
+  (error (message (format "caught: %s" exc)) nil))
