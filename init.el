@@ -133,6 +133,7 @@
       gdb-many-windows t
       ring-bell-function 'ignore
       echo-keystrokes 0.1
+      compilation-scroll-output 'first-error
       font-lock-maximum-decoration t
       inhibit-startup-message t
       column-number-mode t
