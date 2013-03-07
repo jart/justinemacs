@@ -19,7 +19,7 @@
 
 (eval-after-load 'paredit
   '(progn
-     ;; these bindings make paredit easier to use
+     ;; These bindings make paredit easier to use.
      (define-key paredit-mode-map (kbd "C-<return>")
        'lob/paredit-close-parenthesis-and-newline)
      (define-key paredit-mode-map (kbd "C-c C-s") 'paredit-forward-slurp-sexp)
@@ -28,10 +28,13 @@
      (define-key paredit-mode-map (kbd "C-c C-l") 'paredit-split-sexp)
      (define-key paredit-mode-map (kbd "C-c C-j") 'paredit-join-sexps)
 
-     ;; these bindings make paredit feel less buggy
+     ;; These bindings make paredit feel less buggy.
      (define-key paredit-mode-map (kbd "C-d") 'paredit-forward-delete)
      (define-key paredit-mode-map (kbd "<DEL>") 'paredit-backward-delete)
-     (define-key paredit-mode-map (kbd "C-M-h") 'paredit-backward-kill-word)
-     (define-key paredit-mode-map (kbd ")") 'lob/paredit-close-parenthesis)))
+     (define-key paredit-mode-map (kbd ")") 'lob/paredit-close-parenthesis)
+
+     ;; Overload paredit with the stuff I overloaded in vanilla Emacs.
+     (define-key paredit-mode-map (kbd "C-h") 'paredit-backward-delete)
+     (define-key paredit-mode-map (kbd "C-M-h") 'paredit-backward-kill-word)))
 
 (provide 'lob-lisp)

@@ -5,7 +5,8 @@
 (defun lob/c-mode-common-hook ()
   (define-key c-mode-base-map (kbd "C-c C-c") 'compile)
   (define-key c-mode-base-map (kbd "C-c C-d") 'disaster)
-  (define-key c-mode-base-map (kbd "C-c C-h") 'ff-find-other-file)
+  (define-key c-mode-base-map (kbd "C-c C-o") 'ff-find-other-file)
+  (define-key c-mode-base-map (kbd "C-c C-h") 'includeme)
   (define-key c-mode-base-map (kbd "C-<return>") 'c-indent-new-comment-line)
   (define-key c-mode-base-map (kbd "C-M-h") 'backward-kill-word))
 
