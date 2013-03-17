@@ -170,8 +170,18 @@
 (delete-selection-mode 1)
 (show-paren-mode 1)
 
-;; This asks emacs to complain when I use tabs, break the 80 character rule,
-;; or insert trailing whitespace.
+;; Performance Improvement: I don't know who thought it was a good idea to ruin
+;; the interactivity of this editor by doing a zillion disk seeks whenever I
+;; try to open a file, just so it can put the current revision number in the
+;; mode line.
+(setq vc-handled-backends nil)
+
+;; Performance Improvement: This is another not so great feature that makes
+;; emacs slower by doing a zillion stat() calls every time I open a file.
+(require 'files)
+(defun dir-locals-find-file (file) nil)
+
+;; Show me tabs, trailing whitespace, and when I overflow Fortran punchcards.
 (require 'whitespace)
 (setq whitespace-style '(face tabs tab-mark lines-tail trailing))
 (setq whitespace-line-column 80)
