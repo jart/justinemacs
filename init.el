@@ -254,6 +254,10 @@
            (append cc-search-directories
                    (list "/usr/include/c++/*")))))
 
+(eval-after-load 'calc
+  '(progn
+     (define-key calc-mode-map (kbd "C-x C-t") 'other-window)))
+
 (require 'server)
 (if (not (server-running-p))
     (server-start))
