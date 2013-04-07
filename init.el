@@ -90,6 +90,7 @@
 (setq-default
  indent-tabs-mode nil
  tab-width 2
+ python-indent 2
  c-basic-offset 2
  c-file-style nil
  fill-column 79
@@ -234,7 +235,7 @@
      (define-key go-mode-map (kbd "<return>") 'newline-and-indent)
      (define-key go-mode-map (kbd "RET") 'newline-and-indent)))
 
-(eval-after-load 'sh-mode
+(eval-after-load 'sh-script
   '(progn
      (define-key sh-mode-map (kbd "<return>") 'newline-and-indent)
      (define-key sh-mode-map (kbd "RET") 'newline-and-indent)))
