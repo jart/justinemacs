@@ -229,6 +229,7 @@
 (add-to-list 'auto-mode-alist '("\\.clj$" . emacs-lisp-mode))
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.as$" . actionscript-mode))
 
 (eval-after-load 'go-mode
   '(progn
