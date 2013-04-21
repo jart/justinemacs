@@ -58,6 +58,9 @@
   (global-set-key (kbd "C-+") 'text-scale-increase)
   (global-set-key (kbd "C-_") 'text-scale-decrease))
 
+(define-key minibuffer-local-map (kbd "C-p") 'previous-history-element)
+(define-key minibuffer-local-map (kbd "C-n") 'next-history-element)
+
 (if (string= (getenv "USER") "jart")
     (progn
       (keyboard-translate ?\C-u ?\C-x)
