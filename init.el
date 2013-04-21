@@ -193,10 +193,132 @@
 (require 'uniquify)
 (require 'ansi-color)
 (require 'recentf)
-(require 'lob-defuns)
-(require 'lob-c)
-(require 'lob-lisp)
-(require 'lob-python)
+
+(defmacro lob/nevar-fail (primary failover)
+  "Runs primary code.  If primary code fails, then executes
+  failover code."
+  `(condition-case exc
+       ,primary
+     ('error
+      (message (format "Caught exception: [%s]" exc))
+      ,failover)))
+
+(defun lob/sudo (&optional path)
+  (interactive)
+  (find-alternate-file
+   (concat "/sudo:root@localhost:" (or path buffer-file-name))))
+
+(defun lob/unfill-paragraph ()
+  "The opposite of fill-paragraph. Takes a multi-line paragraph
+and makes it into a single line of text.  Thanks: Stefan Monnier
+<foo at acm.org>"
+  (interactive)
+  (let ((fill-column (point-max)))
+    (fill-paragraph nil)))
+
+(defun lob/regen-autoloads (&optional force)
+  "Regenerate the autoload definitions file if necessary and load it."
+  (interactive "P")
+  (when (or force (not (file-exists-p autoload-file)))
+    (message "updating autoloads...")
+    (let ((generated-autoload-file autoload-file))
+      (eval (cons 'update-directory-autoloads lob/vendor-dirs))))
+  (load autoload-file))
+
+(defun lob/reload ()
+  "Save the .emacs buffer if needed, then reload .emacs."
+  (interactive)
+  (let ((dot-emacs (concat dotfiles-dir "/init.el")))
+    (and (get-file-buffer dot-emacs)
+         (save-buffer (get-file-buffer dot-emacs)))
+    (load-file dot-emacs))
+  (message "Re-initialized!"))
+
+(defun lob/recompile ()
+  "Recompiles everything so emacs loads wicked fast"
+  (interactive)
+  (lob/regen-autoloads t)
+  (byte-recompile-directory dotfiles-dir 0)
+  (byte-recompile-directory (concat dotfiles-dir "/vendor") 0))
+
+(defun lob/cleanup-buffer ()
+  "Perform a bunch of operations on the whitespace content of a buffer."
+  (interactive)
+  (indent-region (point-min) (point-max))
+  (untabify (point-min) (point-max))
+  (delete-trailing-whitespace))
+
+(defun lob/recentf-ido-find-file ()
+  "Find a recent file using ido."
+  (interactive)
+  (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
+    (when file
+      (find-file file))))
+
+(defun lob/run-coding-hook ()
+  "Enable things that are convenient across all coding buffers."
+  (run-hooks 'lob/coding-hook))
+
+(defun lob/pretty-lambdas ()
+  (font-lock-add-keywords
+   nil `(("(?\\(lambda\\>\\)"
+          (0 (progn (compose-region (match-beginning 1) (match-end 1)
+                                    ,(make-char 'greek-iso8859-7 107))
+                    nil))))))
+
+(defun lob/local-comment-auto-fill ()
+  (set (make-local-variable 'comment-auto-fill-only-comments) t)
+  (auto-fill-mode t))
+
+(defun lob/turn-on-paredit ()
+  (paredit-mode t))
+
+(defun lob/turn-on-company ()
+  (company-mode t))
+
+(defun lob/turn-off-tool-bar ()
+  (tool-bar-mode -1))
+
+(define-key isearch-mode-map (kbd "C-o")
+  (lambda () (interactive)
+    (let ((case-fold-search isearch-case-fold-search))
+      (occur (if isearch-regexp isearch-string
+               (regexp-quote isearch-string))))))
+
+(defun lob/face-at-point ()
+  "Tells me who is responsible for ugly color under cursor"
+  (interactive)
+  (message "%S: %s" (face-at-point)
+           (face-documentation (face-at-point))))
+
+(defun lob/paredit-close-parenthesis ()
+  "How do you expect me to rebalance my parens if you won't let
+  me type omg!"
+  (interactive)
+  (lob/nevar-fail (paredit-close-parenthesis)
+                  (insert ")")))
+
+(defun lob/paredit-close-parenthesis-and-newline ()
+  "How do you expect me to rebalance my parens if you won't let
+  me type omg!"
+  (interactive)
+  (lob/nevar-fail (paredit-close-parenthesis-and-newline)
+                  (insert ")")))
+
+(defun lob/remove-elc-on-save ()
+  "If you're saving an elisp file, likely the .elc is no longer valid."
+  (make-local-variable 'after-save-hook)
+  (add-hook 'after-save-hook
+            (lambda ()
+              (if (file-exists-p (concat buffer-file-name "c"))
+                  (delete-file (concat buffer-file-name "c"))))))
+
+;; (defun lob/remove-from-list-and-sublists (remove-item list)
+;;   (loop for item in list
+;;         if (not (equal item remove-item))
+;;         collect (if (listp item)
+;;                     (lob/remove-from-list-and-sublists remove-item item)
+;;                   item)))
 
 (lob/regen-autoloads)
 
@@ -269,6 +391,116 @@
 (eval-after-load 'calc
   '(progn
      (define-key calc-mode-map (kbd "C-x C-t") 'other-window)))
+
+(eval-after-load 'cc-mode
+  '(progn
+     (defun lob/c-mode-common-hook ()
+       (define-key c-mode-base-map (kbd "C-c C-c") 'compile)
+       (define-key c-mode-base-map (kbd "C-c C-d") 'disaster)
+       (define-key c-mode-base-map (kbd "C-c C-o") 'ff-find-other-file)
+       (define-key c-mode-base-map (kbd "C-c C-h") 'includeme)
+       (define-key c-mode-base-map (kbd "C-<return>") 'c-indent-new-comment-line)
+       (define-key c-mode-base-map (kbd "C-M-h") 'backward-kill-word))
+
+     (defun lob/c++-mode-hook ()
+       (font-lock-add-keywords
+        nil
+        '(;; complete some fundamental keywords
+          ("\\<\\(void\\|unsigned\\|signed\\|char\\|short\\|bool\\|int\\|long\\|float\\|double\\)\\>" . font-lock-keyword-face)
+          ;; add the new C++11 keywords
+          ("\\<\\(alignof\\|alignas\\|constexpr\\|decltype\\|noexcept\\|nullptr\\|static_assert\\|thread_local\\|override\\|final\\)\\>" . font-lock-keyword-face)
+          ("\\<\\(char[0-9]+_t\\)\\>" . font-lock-keyword-face)
+          ;; PREPROCESSOR_CONSTANT
+          ("\\<[A-Z]*_[A-Z_]+\\>" . font-lock-constant-face)
+          ;; hexadecimal numbers
+          ("\\<0[xX][0-9A-Fa-f]+\\>" . font-lock-constant-face)
+          ;; integer/float/scientific numbers
+          ("\\<[\\-+]*[0-9]*\\.?[0-9]+\\([ulUL]+\\|[eE][\\-+]?[0-9]+\\)?\\>" . font-lock-constant-face)
+          ;; user-defined types (customizable)
+          ("\\<[A-Za-z_]+[A-Za-z_0-9]*_\\(type\\|ptr\\)\\>" . font-lock-type-face)
+          ;; some explicit typenames (customizable)
+          ("\\<\\(xstring\\|xchar\\)\\>" . font-lock-type-face))))
+
+
+     (add-hook 'c-mode-common-hook 'google-set-c-style)
+     (add-hook 'c-mode-common-hook 'google-make-newline-indent)
+     (add-hook 'c-mode-common-hook 'lob/c-mode-common-hook)
+     (add-hook 'c++-mode-hook 'lob/c++-mode-hook)))
+
+(eval-after-load 'lisp-mode
+  '(progn
+     (define-key read-expression-map (kbd "TAB") 'lisp-complete-symbol)
+     (define-key lisp-mode-shared-map (kbd "C-c l") "lambda")
+     (define-key lisp-mode-shared-map (kbd "RET")
+       'reindent-then-newline-and-indent)
+     (define-key lisp-mode-shared-map (kbd "C-\\") 'lisp-complete-symbol)
+     (define-key lisp-mode-shared-map (kbd "C-c v") 'eval-buffer)
+     (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode)
+     (add-hook 'emacs-lisp-mode-hook 'lob/turn-on-company)
+     (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
+     (add-hook 'emacs-lisp-mode-hook 'lob/remove-elc-on-save)
+     (add-hook 'emacs-lisp-mode-hook 'lob/run-coding-hook)))
+
+(eval-after-load 'paredit
+  '(progn
+     ;; These bindings make paredit easier to use.
+     (define-key paredit-mode-map (kbd "C-<return>")
+       'lob/paredit-close-parenthesis-and-newline)
+     (define-key paredit-mode-map (kbd "C-c C-s") 'paredit-forward-slurp-sexp)
+     (define-key paredit-mode-map (kbd "C-c C-b") 'paredit-forward-barf-sexp)
+     (define-key paredit-mode-map (kbd "C-c C-r") 'paredit-raise-sexp)
+     (define-key paredit-mode-map (kbd "C-c C-l") 'paredit-split-sexp)
+     (define-key paredit-mode-map (kbd "C-c C-j") 'paredit-join-sexps)
+
+     ;; These bindings make paredit feel less buggy.
+     (define-key paredit-mode-map (kbd "C-d") 'paredit-forward-delete)
+     (define-key paredit-mode-map (kbd "<DEL>") 'paredit-backward-delete)
+     (define-key paredit-mode-map (kbd ")") 'lob/paredit-close-parenthesis)
+
+     ;; Overload paredit with the stuff I overloaded in vanilla Emacs.
+     (define-key paredit-mode-map (kbd "C-h") 'paredit-backward-delete)
+     (define-key paredit-mode-map (kbd "C-M-h") 'paredit-backward-kill-word)))
+
+(eval-after-load 'python
+  '(progn
+     (defun lob/python-check ()
+       "Runs pyflakes and pep8 on current file"
+       (interactive)
+       (let ((path (file-name-nondirectory buffer-file-name)))
+         (compile (format "pyflakes %s ; pep8 --repeat %s" path path))))
+
+     (defun lob/python-check-dir ()
+       "Same as `lob/python-check' but for all files in the
+        current directory (as well as sub-directories.)"
+       (interactive)
+       (compile "pyflakes *.py ; pep8 --repeat *.py"))
+
+     (defadvice python-calculate-indentation (around outdent-closing-brackets)
+       "Handle lines beginning with a closing bracket and indent
+        them so that they line up with the line containing the
+        corresponding opening bracket."
+       (save-excursion
+         (beginning-of-line)
+         (let ((syntax (syntax-ppss)))
+           (if (and (not (eq 'string (syntax-ppss-context syntax)))
+                    (python-continuation-line-p)
+                    (cadr syntax)
+                    (skip-syntax-forward "-")
+                    (looking-at "\\s)"))
+               (progn
+                 (forward-char 1)
+                 (ignore-errors (backward-sexp))
+                 (setq ad-return-value (current-indentation)))
+             ad-do-it))))
+
+     (define-key python-mode-map (kbd "<return>") 'newline-and-indent)
+     (define-key python-mode-map (kbd "RET") 'newline-and-indent)
+     (define-key python-mode-map (kbd "C-c c") 'lob/python-check)
+     (define-key python-mode-map (kbd "C-c C") 'lob/python-check-dir)
+     (define-key python-mode-map (kbd "C-c l") "lambda")
+     (define-key python-mode-map (kbd "M-/") 'hippie-expand)
+     (ad-activate 'python-calculate-indentation)
+     (add-hook 'python-mode-hook 'lob/run-coding-hook)))
 
 (require 'server)
 (if (not (server-running-p))
