@@ -89,7 +89,7 @@ Semantic, and Ansi-Color faces are included.")
    `(font-lock-constant-face ((,class (:foreground ,plum-0))))
    `(font-lock-function-name-face ((,class (:foreground ,butter-1))))
    `(font-lock-keyword-face ((,class (:foreground ,cham-0))))
-   `(font-lock-string-face ((,class (:foreground ,choc-1))))
+   `(font-lock-string-face ((,class (:foreground "#d7af87"))))
    `(font-lock-type-face ((,class (:foreground ,blue-0))))
    `(font-lock-variable-name-face ((,class (:foreground ,orange-1))))
    ;; Button and link faces
