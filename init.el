@@ -61,21 +61,18 @@
 (define-key minibuffer-local-map (kbd "C-p") 'previous-history-element)
 (define-key minibuffer-local-map (kbd "C-n") 'next-history-element)
 
-(if (string= (getenv "USER") "jart")
-    (progn
-      (keyboard-translate ?\C-u ?\C-x)
-      (keyboard-translate ?\C-x ?\C-u)
-      ;; (global-set-key (kbd "C-u") ctl-x-map)
-      ;; (global-set-key (kbd "C-x") 'universal-argument)
-      (global-set-key (kbd "C-h") 'delete-backward-char)
-      (global-set-key (kbd "M-h") 'backward-kill-word)
-      (global-set-key (kbd "C-x C-h") 'help)
-      (global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
-      (global-set-key (kbd "C-x C-g") 'grep-find)
-      (global-set-key (kbd "C-x b") 'ibuffer)
-      (global-unset-key (kbd "C-/"))
-      (setq disaster-cxx "clang++")
-      (setq disaster-cxxflags "-g -S -std=c++11 -O3 -march=native")))
+(when (string= (getenv "USER") "jart")
+  (keyboard-translate ?\C-u ?\C-x)
+  (keyboard-translate ?\C-x ?\C-u)
+  ;; (global-set-key (kbd "C-u") ctl-x-map)
+  ;; (global-set-key (kbd "C-x") 'universal-argument)
+  (global-set-key (kbd "C-h") 'delete-backward-char)
+  (global-set-key (kbd "M-h") 'backward-kill-word)
+  (global-set-key (kbd "C-x C-h") 'help)
+  (global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
+  (global-set-key (kbd "C-x C-g") 'grep-find)
+  (global-set-key (kbd "C-x b") 'ibuffer)
+  (global-unset-key (kbd "C-/")))
 
 (setq dotfiles-dir (file-name-directory
                     (or (buffer-file-name) load-file-name)))
@@ -454,6 +451,10 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
      (define-key paredit-mode-map (kbd "C-c C-r") 'paredit-raise-sexp)
      (define-key paredit-mode-map (kbd "C-c C-l") 'paredit-split-sexp)
      (define-key paredit-mode-map (kbd "C-c C-j") 'paredit-join-sexps)
+     (define-key paredit-mode-map (kbd "C-c C-i") 'paredit-reindent-defun)
+     (define-key paredit-mode-map (kbd "C-c TAB") 'paredit-reindent-defun)
+     (define-key paredit-mode-map (kbd "C-c C-w") 'paredit-wrap-round)
+     (define-key paredit-mode-map (kbd "C-c C-p") 'paredit-splice-sexp)
 
      ;; These bindings make paredit feel less buggy.
      (define-key paredit-mode-map (kbd "C-d") 'paredit-forward-delete)
@@ -508,3 +509,12 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 (require 'server)
 (if (not (server-running-p))
     (server-start))
+
+(when (string= (getenv "USER") "jart")
+  (add-to-list 'load-path "/home/jart/includeme")
+  (require 'includeme)
+  (define-key c-mode-base-map (kbd "C-c C-h") 'includeme)
+
+  (add-to-list 'load-path "/home/jart/disaster")
+  (require 'disaster)
+  (define-key c-mode-base-map (kbd "C-c C-d") 'disaster))
