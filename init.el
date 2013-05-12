@@ -61,7 +61,7 @@
 (define-key minibuffer-local-map (kbd "C-p") 'previous-history-element)
 (define-key minibuffer-local-map (kbd "C-n") 'next-history-element)
 
-(when (string= (getenv "USER") "jart")
+(when (string-match "^jart\\|ows$" (getenv "USER"))
   (keyboard-translate ?\C-u ?\C-x)
   (keyboard-translate ?\C-x ?\C-u)
   ;; (global-set-key (kbd "C-u") ctl-x-map)
