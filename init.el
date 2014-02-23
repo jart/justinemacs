@@ -353,15 +353,27 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.as$" . actionscript-mode))
 
-(eval-after-load 'go-mode
-  '(progn
-     (define-key go-mode-map (kbd "<return>") 'newline-and-indent)
-     (define-key go-mode-map (kbd "RET") 'newline-and-indent)))
+(defun js-newline-and-indent ()
+  (interactive)
+  (if (= 0 (current-column))
+      (newline)
+    (if (eq font-lock-comment-face (face-at-point))
+        (c-indent-new-comment-line)
+      (newline-and-indent)))
+  (end-of-line))
 
-(eval-after-load 'sh-script
-  '(progn
-     (define-key sh-mode-map (kbd "<return>") 'newline-and-indent)
-     (define-key sh-mode-map (kbd "RET") 'newline-and-indent)))
+(let ((modes '((go-mode     go-mode-map          'newline-and-indent)
+               (js          js-mode-map          'js-newline-and-indent)
+               (python-mode python-mode-map      'newline-and-indent)
+               (sh-script   sh-mode-map          'newline-and-indent)
+               (yaml-mode   yaml-mode-map        'newline-and-indent)
+               (lisp-mode   lisp-mode-shared-map 'reindent-then-newline-and-indent))))
+  (while modes
+    (eval-after-load (caar modes)
+      `(progn
+         (define-key ,(cadar modes) (kbd "<return>") ,(caddar modes))
+         (define-key ,(cadar modes) (kbd "RET") ,(caddar modes))))
+    (setq modes (cdr modes))))
 
 (eval-after-load 'asm-mode
   '(progn
@@ -497,8 +509,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
                  (setq ad-return-value (current-indentation)))
              ad-do-it))))
 
-     (define-key python-mode-map (kbd "<return>") 'newline-and-indent)
-     (define-key python-mode-map (kbd "RET") 'newline-and-indent)
      (define-key python-mode-map (kbd "C-c c") 'lob/python-check)
      (define-key python-mode-map (kbd "C-c C") 'lob/python-check-dir)
      (define-key python-mode-map (kbd "C-c l") "lambda")
