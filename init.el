@@ -129,6 +129,8 @@
       custom-file (concat dotfiles-dir "custom.el")
       save-place-file (concat dotfiles-dir "places")
       transient-mark-mode t
+      c-basic-offset 2
+      js-indent-level 2
       make-backup-files nil
       visible-bell nil
       gdb-many-windows t
