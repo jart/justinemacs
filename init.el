@@ -377,6 +377,36 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
          (define-key ,(cadar modes) (kbd "RET") ,(caddar modes))))
     (setq modes (cdr modes))))
 
+(eval-after-load 'markdown-mode
+  '(progn
+     (defun jart/markdown-updated-timestamp ()
+       (interactive)
+       (when (or (eq major-mode 'markdown-mode)
+                 (eq major-mode 'yaml-mode))
+         (message "hello")
+         (save-excursion
+           (goto-char (point-min))
+           (let ((timestamp (format-time-string "%Y-%m-%dT%H:%M:%S%z")))
+             (when (search-forward-regexp "^updated: [-+: TZ0-9]+$")
+               (replace-match (concat "updated: " timestamp)))
+             (when (search-forward-regexp "^modified: [-+: TZ0-9]+$")
+               (replace-match (concat "modified: " timestamp)))))))
+     (add-hook 'before-save-hook 'jart/markdown-updated-timestamp)))
+
+(eval-after-load 'go-mode
+  '(progn
+     (require 'go-flymake)
+     (require 'go-flycheck)
+     (require 'go-autocomplete)
+     (require 'go-errcheck)
+     (define-key ac-mode-map (kbd "M-/") 'auto-complete)
+     (define-key go-mode-map (kbd "M-.") 'godef-jump)
+     (define-key go-mode-map (kbd "C-c C-a") 'go-import-add)
+     (define-key go-mode-map (kbd "C-c C-d") 'godef-describe)
+     (define-key go-mode-map (kbd "C-c C-j") 'godef-jump)
+     (define-key go-mode-map (kbd "C-c C-r") 'go-remove-unused-imports)
+     (add-hook 'before-save-hook 'gofmt-before-save)))
+
 (eval-after-load 'asm-mode
   '(progn
      (defun lob/asm-mode-hook ()
