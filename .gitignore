@@ -16,3 +16,4 @@ tramp
 /vendor/coffee-mode
 /vendor/emacs-powerline
 /vendor/actionscript-mode
+/ac-comphist.dat

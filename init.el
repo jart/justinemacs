@@ -78,11 +78,16 @@
                     (or (buffer-file-name) load-file-name)))
 (setq lob/vendor-dirs (list dotfiles-dir
                             (concat dotfiles-dir "vendor")
-                            (concat dotfiles-dir "vendor/magit")
-                            (concat dotfiles-dir "vendor/yasnippet")
-                            (concat dotfiles-dir "vendor/coffee-mode")))
+                            (concat dotfiles-dir "vendor/coffee-mode")
+                            "~/go/src/github.com/nsf/gocode/emacs"
+                            "~/go/src/github.com/dougm/goflymake"))
 (dolist (dir lob/vendor-dirs) (add-to-list 'load-path dir))
 (add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
+
+(require 'cl)
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa" . "http://melpa.milkbox.net/packages/") t)
 
 (prefer-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
@@ -99,13 +104,7 @@
  css-indent-offset 2
  coffee-tab-width 2
  sh-basic-offset 2
- sh-indentation 2
- company-clang-modes '(c-mode c++-mode objc-mode)
- company-backends '(company-elisp company-nxml company-css company-eclim
-                    company-semantic company-xcode company-oddmuse
-                    company-files company-dabbrev
-                    (company-gtags company-etags company-dabbrev-code
-                     company-keywords)))
+ sh-indentation 2)
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (if (fboundp 'tooltip-mode) (tooltip-mode -1))
@@ -128,6 +127,8 @@
       autoload-file (concat dotfiles-dir "loaddefs.el")
       custom-file (concat dotfiles-dir "custom.el")
       save-place-file (concat dotfiles-dir "places")
+      ispell-silently-savep t
+      ispell-extra-args '("-m")
       transient-mark-mode t
       c-basic-offset 2
       js-indent-level 2
@@ -275,9 +276,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 (defun lob/turn-on-paredit ()
   (paredit-mode t))
 
-(defun lob/turn-on-company ()
-  (company-mode t))
-
 (defun lob/turn-off-tool-bar ()
   (tool-bar-mode -1))
 
@@ -334,10 +332,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
       (load-theme 'zenburn t)
       (warn "For much prettier colors run: TERM=xterm-256color emacs -nw"))))
 
-(require 'yasnippet)
-(yas-global-mode 1)
-(setq yas/root-directory (list (concat dotfiles-dir "snippets")))
-
 (setq rst-adornment-faces-alist (quote ((t . highlight-current-line)
                                         (t . font-lock-keyword-face)
                                         (1 . font-lock-keyword-face)
@@ -354,19 +348,22 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.as$" . actionscript-mode))
+(add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 
-(defun js-newline-and-indent ()
-  (interactive)
-  (if (= 0 (current-column))
-      (newline)
-    (if (eq font-lock-comment-face (face-at-point))
-        (c-indent-new-comment-line)
-      (newline-and-indent)))
-  (end-of-line))
+;; (eval-after-load 'js2-mode
+;;   '(progn
+;;      (defun lob/js2-closure ()
+;;        (let ((buf (buffer-string))
+;;              (index 0))
+;;          (while (string-match "\\(goog\\.require\\|goog\\.provide\\)('\\([^'.]*\\)"
+;;                               buf index)
+;;            (setq index (+ 1 (match-end 0)))
+;;            (add-to-list 'js2-additional-externs (match-string 2 buf)))))
+;;      (add-hook 'js2-post-parse-callbacks 'lob/js2-closure)))
 
 (let ((modes '((go-mode     go-mode-map          'newline-and-indent)
-               (js          js-mode-map          'js-newline-and-indent)
                (python-mode python-mode-map      'newline-and-indent)
+               (js2-mode    js2-mode-map         'js2-line-break)
                (sh-script   sh-mode-map          'newline-and-indent)
                (yaml-mode   yaml-mode-map        'newline-and-indent)
                (lisp-mode   lisp-mode-shared-map 'reindent-then-newline-and-indent))))
@@ -480,7 +477,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
      (define-key lisp-mode-shared-map (kbd "C-\\") 'lisp-complete-symbol)
      (define-key lisp-mode-shared-map (kbd "C-c v") 'eval-buffer)
      (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode)
-     (add-hook 'emacs-lisp-mode-hook 'lob/turn-on-company)
      (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
      (add-hook 'emacs-lisp-mode-hook 'lob/remove-elc-on-save)
      (add-hook 'emacs-lisp-mode-hook 'lob/run-coding-hook)))
@@ -507,7 +503,14 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 
      ;; Overload paredit with the stuff I overloaded in vanilla Emacs.
      (define-key paredit-mode-map (kbd "C-h") 'paredit-backward-delete)
+
      (define-key paredit-mode-map (kbd "C-M-h") 'paredit-backward-kill-word)))
+
+(setq-default
+ js2-bounce-indent-p t
+ js2-enter-indents-newline t)
+(setq
+ js2-global-externs '("goog" "occu" "JSON" "console" "gapi"))
 
 (eval-after-load 'python
   '(progn
@@ -560,3 +563,15 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
   (add-to-list 'load-path "/home/jart/disaster")
   (require 'disaster)
   (define-key c-mode-base-map (kbd "C-c C-d") 'disaster))
+
+(load "/home/jart/occupywallst.org/assets/closure-library/closure/bin/labs/code/closure.el")
+(load "/home/jart/occupywallst.org/assets/closure-library/closure/bin/labs/code/closure_test.el")
+
+(package-initialize)
+(global-auto-revert-mode t)
+(require 'auto-complete-config)
+(ac-config-default)
+(add-hook 'after-init-hook #'global-flycheck-mode)
+(require 'yasnippet)
+(yas-global-mode 1)
+(setq yas/root-directory (list (concat dotfiles-dir "snippets")))
