@@ -45,7 +45,8 @@ Semantic, and Ansi-Color faces are included.")
       (alum-4 "#888a85") (alum-5 "#555753") (alum-6 "#2e3436")
       ;; Not in Tango palette; used for better contrast.
       (cham-0 "#b4fa70") (blue-0 "#8cc4ff") (plum-0 "#e6a8df")
-      (red-0 "#ff4b4b")  (alum-5.5 "#41423f") (alum-7 "#212526"))
+      (red-0 "#ff4b4b")  (alum-5.5 "#41423f") (alum-7 "#212526")
+      (diff-green "#00af00") (diff-red "#d70000"))
 
   (custom-theme-set-faces
    'justine256
@@ -138,9 +139,29 @@ Semantic, and Ansi-Color faces are included.")
    `(ediff-fine-diff-B ((,class (:background ,choc-3))))
    `(ediff-even-diff-B ((,class (:background ,alum-5.5))))
    `(ediff-odd-diff-B ((,class (:background ,alum-5.5))))
+   ;; Diff faces
+   '(diff-header ((t (:foreground "grey80" :background "grey20"))))
+   '(diff-file-header ((t (:weight bold :background "grey20"))))
+   '(diff-hunk-header ((t (:inherit diff-header))))
+   '(diff-header ((t (:weight bold :background "grey20"))))
+   '(diff-added ((t (:inherit diff-changed :background "dark green"))))
+   '(diff-changed ((t (:background "midnight blue"))))
+   '(diff-indicator-added ((t (:inherit diff-indicator-changed))))
+   '(diff-indicator-changed ((t (:weight bold))))
+   '(diff-indicator-removed ((t (:inherit diff-indicator-changed))))
+   '(diff-removed ((t (:inherit diff-changed :background "dark red"))))
+   ;; Magit faces
+   '(magit-diff-add ((t (:foreground "color-34"))))
+   '(magit-diff-del ((t (:foreground "color-160"))))
+   '(magit-diff-file-header ((t (:inherit magit-header))))
+   '(magit-diff-hunk-header ((t (:inherit magit-header))))
+   '(magit-header ((t (:weight bold))))
+   '(magit-item-highlight ((t (:background "color-237"))))
+   '(magit-log-head-label ((t (:background "color-34"))))
+   '(magit-log-tag-label ((t (:background "color-172"))))
    ;; Flyspell faces
-   `(flyspell-duplicate ((,class (:underline ,orange-1))))
-   `(flyspell-incorrect ((,class (:underline ,red-1))))
+   `(flyspell-duplicate ((,class (:foreground ,orange-1))))
+   `(flyspell-incorrect ((,class (:foreground ,red-1))))
    ;; whitespace-mode
    `(whitespace-space ((t (:foreground "#333" :background nil))))
    `(whitespace-tab ((t (:foreground "#333" :background nil))))
@@ -157,8 +178,22 @@ Semantic, and Ansi-Color faces are included.")
    `(semantic-decoration-on-unparsed-includes
      ((,class (:background ,alum-5.5))))
    `(semantic-tag-boundary-face ((,class (:overline ,blue-1))))
-   `(semantic-unmatched-syntax-face ((,class (:underline ,red-1)))))
-
+   `(semantic-unmatched-syntax-face ((,class (:underline ,red-1))))
+   ;; JavaScript
+   `(js2-warning ((,class (:inherit warning))))
+   ;; FlyCheck
+   `(flycheck-error ((,class (:inherit error))))
+   `(flycheck-info ((,class (:inherit info))))
+   `(flycheck-warning ((,class (:inherit warning))))
+   ;; Gutter
+   `(gutter ((,class (:background ,alum-7 :weight bold))))
+   `(git-gutter:added ((,class (:inherit gutter :foreground ,diff-green))))
+   `(git-gutter:deleted ((,class (:inherit gutter :foreground ,diff-red))))
+   `(git-gutter:modified ((,class (:inherit gutter :foreground "magenta"))))
+   `(git-gutter:separator ((,class (:inherit gutter :foreground "cyan"))))
+   `(git-gutter:unchanged ((,class (:inherit gutter))))
+   ;; Skewer
+   `(skewer-error-face ((,class (:inherit error)))))
   (custom-theme-set-variables
    'justine256
    `(ansi-color-names-vector [,alum-7 ,red-0 ,cham-0 ,butter-1
