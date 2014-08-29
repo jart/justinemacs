@@ -394,6 +394,14 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
          (define-key ,(cadar modes) (kbd "RET") ,(caddar modes))))
     (setq modes (cdr modes))))
 
+(eval-after-load 'web-mode
+  '(progn
+     (defun jart-web-mode-hook ()
+       (interactive)
+       (when (string= web-mode-engine "closure") ;; soy templates
+         (set (make-local-variable 'whitespace-line-column) 100)))
+     (add-hook 'web-mode-hook 'jart-web-mode-hook)))
+
 (eval-after-load 'js2-mode
   '(progn
      ;;(require 'cache-table)
