@@ -169,7 +169,7 @@
  ido-use-filename-at-point 'guess
  indent-tabs-mode nil
  inhibit-startup-message t
- ispell-extra-args '("-m")
+ ispell-extra-args '("--encoding=utf-8" "--master=jart")
  ispell-silently-savep t
  jart-is-colorful (>= (display-color-cells) 256)
  jart-is-linux (not (null (memq system-type '(gnu/linux))))
@@ -190,9 +190,10 @@
  truncate-partial-width-windows nil
  uniquify-buffer-name-style 'forward
  visible-bell nil
+ web-mode-tag-auto-close-style 1
  whitespace-line-column 80
  whitespace-style '(face tabs tab-mark lines-tail trailing)
- yas/root-directory (list (concat dotfiles-dir "snippets")))
+ yas-snippet-dirs (list (concat dotfiles-dir "snippets")))
 
 (if (fboundp 'x-cut-buffer-or-selection-value)
     (setq x-select-enable-clipboard t
@@ -364,13 +365,11 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
      (transpose-chars nil))))
 
 (add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
-(add-to-list 'auto-mode-alist '("\\.php$" . html-mode))
-(add-to-list 'auto-mode-alist '("\\.less$" . css-mode))
-(add-to-list 'auto-mode-alist '("\\.clj$" . emacs-lisp-mode))
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
-(add-to-list 'auto-mode-alist '("\\.as$" . actionscript-mode))
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(html\\|xml\\|soy\\|css\\)$" . web-mode))
+(setq web-mode-engines-alist '(("liquid" . "\\.\\(html\\|xml\\)\\'")))
 
 (add-hook 'jart-coding-hook 'jart-pretty-lambdas)
 (add-hook 'text-mode-hook 'flyspell-mode)
@@ -486,6 +485,10 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
      (setq sh-basic-offset 2
            sh-indentation 2)
      (add-hook 'sh-mode-hook 'jart-sh-mode-hook)))
+
+(eval-after-load 'coffee-mode
+  '(progn
+     (define-key coffee-mode-map (kbd "C-M-h") 'backward-kill-word)))
 
 (eval-after-load 'cc-mode
   '(progn
