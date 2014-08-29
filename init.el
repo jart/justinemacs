@@ -134,6 +134,10 @@
   (blink-cursor-mode -1)
   (add-hook 'before-make-frame-hook 'jart-turn-off-tool-bar))
 
+(custom-set-variables
+'(magit-stage-all-confirm nil)
+'(magit-unstage-all-confirm nil))
+
 (setq-default
  ac-auto-show-menu 0.01
  ac-candidate-menu-min 1
