@@ -35,6 +35,7 @@
     (set-frame-font myfont)
     (add-to-list 'default-frame-alist (cons 'font myfont))))
 
+(global-set-key (kbd "C-t") 'jart-yas-expand)
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
 (global-set-key (kbd "M-Q") 'jart-unfill-paragraph)
 (global-set-key (kbd "M-/") 'hippie-expand)
@@ -349,6 +350,14 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
   (goto-char (point-min))
   (org-insert-heading)
   (insert (concat "<" (format-time-string "%Y-%m-%dT%H:%M:%S%z") "> ")))
+
+(defun jart-yas-expand ()
+  "Expands a yasnippet macro.  Should be bound over to \\[transpose-chars]."
+  (interactive)
+  (condition-case exc
+      (yas-expand)
+    ('error
+     (transpose-chars nil))))
 
 (add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
 (add-to-list 'auto-mode-alist '("\\.php$" . html-mode))
