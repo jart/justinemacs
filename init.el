@@ -380,12 +380,13 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 (add-hook 'jart-coding-hook 'jart-pretty-lambdas)
 (add-hook 'text-mode-hook 'flyspell-mode)
 
-(let ((modes '((go-mode     go-mode-map          'newline-and-indent)
-               (python-mode python-mode-map      'newline-and-indent)
+(let ((modes '((cc-mode     java-mode-map        'c-indent-new-comment-line)
+               (go-mode     go-mode-map          'newline-and-indent)
                (js2-mode    js2-mode-map         'js2-line-break)
+               (lisp-mode   lisp-mode-shared-map 'reindent-then-newline-and-indent)
+               (python-mode python-mode-map      'newline-and-indent)
                (sh-script   sh-mode-map          'newline-and-indent)
-               (yaml-mode   yaml-mode-map        'newline-and-indent)
-               (lisp-mode   lisp-mode-shared-map 'reindent-then-newline-and-indent))))
+               (yaml-mode   yaml-mode-map        'newline-and-indent))))
   (while modes
     (eval-after-load (caar modes)
       `(progn
