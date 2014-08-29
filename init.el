@@ -135,65 +135,78 @@
   (add-hook 'before-make-frame-hook 'jart-turn-off-tool-bar))
 
 (custom-set-variables
-'(magit-stage-all-confirm nil)
-'(magit-unstage-all-confirm nil))
-
-(setq-default
- ac-auto-show-menu 0.01
- ac-candidate-menu-min 1
- ac-trigger-key "C-i"
- ac-use-fuzzy nil
- coffee-tab-width 2
- color-theme-is-global t
- column-number-mode t
- comment-auto-fill-only-comments t
- compilation-scroll-output 'first-error
- css-indent-offset 2
- custom-file (concat dotfiles-dir "custom.el")
- diff-switches "-u"
- echo-keystrokes 0.1
- ediff-window-setup-function 'ediff-setup-windows-plain
- fill-column 79
- flycheck-completion-system 'ido
- flycheck-display-errors-delay 0.8
- flycheck-idle-change-delay 0.2
- font-lock-maximum-decoration t
- frame-title-format '(buffer-file-name "%f - justinemacs" ("%b"))
- gdb-many-windows t
- git-gutter:lighter " GG"
- ido-create-new-buffer 'always
- ido-enable-flex-matching t
- ido-enable-prefix nil
- ido-ignore-extensions t
- ido-max-prospects 10
- ido-use-filename-at-point 'guess
- indent-tabs-mode nil
- inhibit-startup-message t
- ispell-extra-args '("--encoding=utf-8" "--master=jart")
- ispell-silently-savep t
- jart-is-colorful (>= (display-color-cells) 256)
- jart-is-linux (not (null (memq system-type '(gnu/linux))))
- jart-is-mac (not (null (memq system-type '(darwin))))
- jart-is-unix (not (null (memq system-type '(gnu/linux darwin berkeley-unix cygwin))))
- jart-is-windows (not (null (memq system-type '(ms-dos windows-nt cygwin))))
- make-backup-files nil
- mouse-yank-at-point t
- python-indent 2
- require-final-newline t
- ring-bell-function 'ignore
- save-place t
- save-place-file (concat dotfiles-dir "places")
- shift-select-mode nil
- tab-width 2
- transient-mark-mode t
- truncate-lines t
- truncate-partial-width-windows nil
- uniquify-buffer-name-style 'forward
- visible-bell nil
- web-mode-tag-auto-close-style 1
- whitespace-line-column 80
- whitespace-style '(face tabs tab-mark lines-tail trailing)
- yas-snippet-dirs (list (concat dotfiles-dir "snippets")))
+ '(ac-auto-show-menu 0.01)
+ '(ac-candidate-menu-min 1)
+ '(ac-js2-evaluate-calls t)
+ '(ac-js2-external-libraries
+   '("~/justinetunney.com/assets/closure/closure/goog/base.js"
+     "~/justinetunney.com/assets/closure/closure/goog/deps.js"))
+ '(ac-trigger-key "C-i")
+ '(ac-use-fuzzy nil)
+ '(c-basic-offset 2)
+ '(c-file-style nil)
+ '(coffee-tab-width 2)
+ '(color-theme-is-global t)
+ '(column-number-mode t)
+ '(comment-auto-fill-only-comments t)
+ '(compilation-scroll-output 'first-error)
+ '(css-indent-offset 2)
+ '(custom-file (concat dotfiles-dir "custom.el"))
+ '(diff-switches "-u")
+ '(echo-keystrokes 0.1)
+ '(ediff-window-setup-function 'ediff-setup-windows-plain)
+ '(fill-column 79)
+ '(flycheck-completion-system 'ido)
+ '(flycheck-display-errors-delay 0.8)
+ '(flycheck-idle-change-delay 0.2)
+ '(font-lock-maximum-decoration t)
+ '(frame-title-format '(buffer-file-name "%f - justinemacs" ("%b")))
+ '(gdb-many-windows t)
+ '(git-gutter:lighter " GG")
+ '(ido-create-new-buffer 'always)
+ '(ido-enable-flex-matching t)
+ '(ido-enable-prefix nil)
+ '(ido-ignore-extensions t)
+ '(ido-max-prospects 10)
+ '(ido-use-filename-at-point 'guess)
+ '(indent-tabs-mode nil)
+ '(inhibit-startup-message t)
+ '(ispell-extra-args '("--encoding=utf-8" "--master=jart"))
+ '(ispell-silently-savep t)
+ '(jart-is-colorful (>= (display-color-cells) 256))
+ '(jart-is-linux (not (null (memq system-type '(gnu/linux)))))
+ '(jart-is-mac (not (null (memq system-type '(darwin)))))
+ '(jart-is-unix (not (null (memq system-type '(gnu/linux darwin berkeley-unix cygwin)))))
+ '(jart-is-windows (not (null (memq system-type '(ms-dos windows-nt cygwin)))))
+ '(js2-basic-offset 4)
+ '(js2-bounce-indent-p nil)
+ '(js2-enter-indents-newline t)
+ '(js2-global-externs '("goog" "occu" "JSON" "console" "gapi"))
+ '(magit-stage-all-confirm nil)
+ '(magit-unstage-all-confirm nil)
+ '(make-backup-files nil)
+ '(mouse-yank-at-point t)
+ '(python-indent 2)
+ '(require-final-newline t)
+ '(ring-bell-function 'ignore)
+ '(save-place t)
+ '(save-place-file (concat dotfiles-dir "places"))
+ '(sh-basic-offset 2)
+ '(sh-indentation 2)
+ '(shift-select-mode nil)
+ '(tab-width 2)
+ '(transient-mark-mode t)
+ '(truncate-lines t)
+ '(truncate-partial-width-windows nil)
+ '(uniquify-buffer-name-style 'forward)
+ '(vc-handled-backends nil)
+ '(visible-bell nil)
+ '(web-mode-engines-alist '(("liquid" . "\\.\\(html\\|xml\\)\\'")
+                            ("angular" . "\\.ng\\'")))
+ '(web-mode-tag-auto-close-style 1)
+ '(whitespace-line-column 80)
+ '(whitespace-style '(face tabs tab-mark lines-tail trailing))
+ '(yas-snippet-dirs (list (concat dotfiles-dir "snippets"))))
 
 (if (fboundp 'x-cut-buffer-or-selection-value)
     (setq x-select-enable-clipboard t
@@ -234,12 +247,6 @@
     (progn
       (load-theme 'zenburn t)
       (warn "For much prettier colors run: TERM=xterm-256color emacs -nw"))))
-
-;; Performance Improvement: I don't know who thought it was a good idea to ruin
-;; the interactivity of this editor by doing a zillion disk seeks whenever I
-;; try to open a file, just so it can put the current revision number in the
-;; mode line.
-(setq vc-handled-backends nil)
 
 ;; Performance Improvement: This is another not so great feature that makes
 ;; emacs slower by doing a zillion stat() calls every time I open a file.
@@ -369,7 +376,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 (add-to-list 'auto-mode-alist '("\\.\\(html\\|xml\\|soy\\|css\\)$" . web-mode))
-(setq web-mode-engines-alist '(("liquid" . "\\.\\(html\\|xml\\)\\'")))
 
 (add-hook 'jart-coding-hook 'jart-pretty-lambdas)
 (add-hook 'text-mode-hook 'flyspell-mode)
@@ -391,14 +397,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
   '(progn
      ;;(require 'cache-table)
      ;;(require 'skewer-mode)
-     (setq js2-basic-offset 4
-           js2-bounce-indent-p nil
-           js2-enter-indents-newline t
-           js2-global-externs '("goog" "occu" "JSON" "console" "gapi")
-           ac-js2-evaluate-calls t
-           ac-js2-external-libraries
-           '("~/justinetunney.com/assets/closure/closure/goog/base.js"
-             "~/justinetunney.com/assets/closure/closure/goog/deps.js"))
      ;;(add-hook 'js2-mode-hook 'skewer-mode)
      ;;(add-hook 'js2-mode-hook 'ac-js2-mode)
      ;;(add-hook 'js2-mode-hook 'flyspell-prog-mode)
@@ -482,8 +480,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
                   (setq new (cons (car old) new)))
                 (setq old (cdr old)))
               new)))
-     (setq sh-basic-offset 2
-           sh-indentation 2)
      (add-hook 'sh-mode-hook 'jart-sh-mode-hook)))
 
 (eval-after-load 'coffee-mode
@@ -517,8 +513,6 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
           ("\\<[A-Za-z_]+[A-Za-z_0-9]*_\\(type\\|ptr\\)\\>" . font-lock-type-face)
           ;; some explicit typenames (customizable)
           ("\\<\\(xstring\\|xchar\\)\\>" . font-lock-type-face))))
-     (setq c-basic-offset 2
-           c-file-style nil)
      (add-hook 'c-mode-common-hook 'google-set-c-style)
      (add-hook 'c-mode-common-hook 'google-make-newline-indent)
      (add-hook 'c-mode-common-hook 'jart-c-mode-common-hook)
