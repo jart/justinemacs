@@ -157,8 +157,11 @@
  '(ediff-window-setup-function 'ediff-setup-windows-plain)
  '(fill-column 79)
  '(flycheck-completion-system 'ido)
- '(flycheck-display-errors-delay 0.8)
- '(flycheck-idle-change-delay 0.2)
+ '(flycheck-display-errors-delay 0.5)
+ '(flycheck-idle-change-delay 0.8)
+ '(flycheck-locate-config-file-functions
+   '(flycheck-locate-config-file-absolute-path
+     flycheck-locate-config-file-home))
  '(font-lock-maximum-decoration t)
  '(frame-title-format '(buffer-file-name "%f - justinemacs" ("%b")))
  '(gdb-many-windows t)
