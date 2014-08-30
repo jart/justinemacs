@@ -8,5 +8,6 @@ session.*
 /auto-save-list
 /custom.el
 /elpa
+/js2-closure-provides.el
 /places
 /tramp
