@@ -181,10 +181,21 @@
  '(jart-is-mac (not (null (memq system-type '(darwin)))))
  '(jart-is-unix (not (null (memq system-type '(gnu/linux darwin berkeley-unix cygwin)))))
  '(jart-is-windows (not (null (memq system-type '(ms-dos windows-nt cygwin)))))
- '(js2-basic-offset 4)
+ '(js2-basic-offset 2)
  '(js2-bounce-indent-p nil)
  '(js2-enter-indents-newline t)
- '(js2-global-externs '("goog" "occu" "JSON" "console" "gapi"))
+ '(js2-global-externs
+   '("goog" "jart" "occu" "JSON" "console" "gapi" "TestCase" "jstestdriver"
+     "fail" "assert" "assertThrows" "assertNotThrows" "assertTrue" "assertFalse"
+     "assertEquals" "assertNotEquals" "assertNull" "assertNotNull"
+     "assertUndefined" "assertNotUndefined" "assertNotNullNorUndefined"
+     "assertNonEmptyString" "assertNaN" "assertNotNaN" "assertObjectEquals"
+     "assertObjectRoughlyEquals" "assertObjectNotEquals" "assertArrayEquals"
+     "assertElementsEquals" "assertElementsRoughlyEqual" "assertSameElements"
+     "assertEvaluatesToTrue" "assertEvaluatesToFalse" "assertHTMLEquals"
+     "assertHashEquals" "assertRoughlyEquals" "assertContains"
+     "assertNotContains" "assertRegExp"))
+ '(js2-indent-switch-body t)
  '(magit-stage-all-confirm nil)
  '(magit-unstage-all-confirm nil)
  '(make-backup-files nil)
@@ -407,12 +418,89 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
 
 (eval-after-load 'js2-mode
   '(progn
+     (defconst js2-jsdoc-empty-tag-regexp
+       (concat "^\\s-*\\*+\\s-*\\(@\\(?:"
+               (regexp-opt
+                '("addon"
+                  "author"
+                  "class"
+                  "const"
+                  "constant"
+                  "constructor"
+                  "ngInject"
+                  "constructs"
+                  "deprecated"
+                  "desc"
+                  "description"
+                  "event"
+                  "example"
+                  "exec"
+                  "export"
+                  "fileoverview"
+                  "final"
+                  "function"
+                  "hidden"
+                  "ignore"
+                  "implicitCast"
+                  "inheritDoc"
+                  "inner"
+                  "interface"
+                  "license"
+                  "noalias"
+                  "noshadow"
+                  "notypecheck"
+                  "override"
+                  "owner"
+                  "preserve"
+                  "preserveTry"
+                  "private"
+                  "protected"
+                  "public"
+                  "static"
+                  "supported"))
+               "\\)\\)\\s-*")
+              "Matches empty jsdoc tags.")
+     ;;(add-hook 'js2-mode-hook 'ac-js2-mode)
      ;;(require 'cache-table)
      ;;(require 'skewer-mode)
      ;;(add-hook 'js2-mode-hook 'skewer-mode)
-     ;;(add-hook 'js2-mode-hook 'ac-js2-mode)
      ;;(add-hook 'js2-mode-hook 'flyspell-prog-mode)
-     (define-key js2-mode-map (kbd "M-/") 'auto-complete)))
+     (define-key js2-mode-map (kbd "M-/") 'auto-complete)
+     (defvar js2--fill-mode nil)
+     (defun js2--setup-paragraph-filling (&optional separator)
+       (setq c-paragraph-start (or separator js2-paragraph-start))
+       (let ((c-buffer-is-cc-mode t))
+         (make-local-variable 'paragraph-start)
+         (make-local-variable 'paragraph-separate)
+         (make-local-variable 'paragraph-ignore-fill-prefix)
+         (make-local-variable 'adaptive-fill-mode)
+         (make-local-variable 'adaptive-fill-regexp)
+         (c-setup-paragraph-variables)))
+     (defun js2--should-advise ()
+       (or (eq major-mode 'js2-mode)
+           (eq major-mode 'java-mode)))
+     (defadvice forward-paragraph (before js2--forward-paragraph-before activate)
+       (when (and (js2--should-advise)
+                  (not js2--fill-mode))
+         (js2--setup-paragraph-filling "\n\n")))
+     (defadvice forward-paragraph (after js2--forward-paragraph-after activate)
+       (when (and (js2--should-advise)
+                  (not js2--fill-mode))
+         (js2--setup-paragraph-filling)))
+     (defadvice backward-paragraph (before js2--backward-paragraph-before activate)
+       (when (and (js2--should-advise)
+                  (not js2--fill-mode))
+         (js2--setup-paragraph-filling "\n\n")))
+     (defadvice backward-paragraph (after js2--backward-paragraph-after activate)
+       (when (and (js2--should-advise)
+                  (not js2--fill-mode))
+         (js2--setup-paragraph-filling)))
+     (defadvice fill-paragraph (before js2--fill-paragraph-before activate)
+       (when (js2--should-advise)
+         (setq js2--fill-mode t)))
+     (defadvice fill-paragraph (after js2--fill-paragraph-after activate)
+       (when (js2--should-advise)
+                  (setq js2--fill-mode nil)))))
 
 (eval-after-load 'markdown-mode
   '(progn
