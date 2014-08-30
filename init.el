@@ -693,6 +693,14 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
      (ad-activate 'python-calculate-indentation)
      (add-hook 'python-mode-hook 'jart-run-coding-hook)))
 
+(eval-after-load 'autorevert
+  '(progn
+     (defun jart-auto-revert-mode-hook ()
+       "Refresh syntax highlighting after buffer refreshes on new contents."
+       (interactive)
+       (font-lock-fontify-buffer))
+     (add-hook 'auto-revert-mode-hook 'jart-auto-revert-mode-hook)))
+
 (require 'server)
 (if (not (server-running-p))
     (server-start))
