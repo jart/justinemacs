@@ -28,39 +28,45 @@
 ;;
 ;;   I hope this software makes your life happier <3
 
-;; Installation:
+;;; Installation:
 ;;
-;; First you need to be using `js2-mode' and Google Closure. The next step is
+;; First you need to be using `js2-mode' and Google Closure.  The next step is
 ;; to run the script that crawls all your JavaScript sources for provide
-;; statements. For example:
+;; statements.  For example:
 ;;
 ;;   ~/.emacs.d/js2-closure-provides.sh \
 ;;     ~/justinetunney.com/assets/closure/closure/goog \
 ;;     ~/justinetunney.com/assets/js/jart
 ;;
 ;; That will generate an index file in the same directory which should have the
-;; same path as `js2-closure-provides-file'. You have to regenerate this file
-;; occasionally by hand. Each time you run the script, you should also run
-;; M-x `js2-closure-reload' inside emacs.
+;; same path as `js2-closure-provides-file'.  You have to regenerate this file
+;; occasionally by hand.  Each time you run the script, you should also run M-x
+;; `js2-closure-reload' inside emacs.
 ;;
-;; When editing JavaScript files, run M-x `js2-closure-fix' to regenerate the
-;; list of goog.require statements.
+;; To use this, you simply run M-x `js2-closure-fix' inside your `js2-mode'
+;; buffer.  This will regenerate the list of goog.require statements by
+;; crawling your source code to see which identifiers are being used.
 ;;
-;; If you want the magic to happen automatically on save, then add the
-;; following to your .emacs file:
+;; If you want the magic to happen automatically each time you save the suffer,
+;; then add the following to your .emacs file:
 ;;
 ;;   (eval-after-load 'js2-mode
 ;;     '(add-hook 'before-save-hook 'js2-closure-save-hook))
+;;
+;; Alternatively, you can use a key binding as follows:
+;;
+;;   (eval-after-load 'js2-mode
+;;     '(define-key js2-mode-map (kbd "C-c C-c") 'js2-closure-fix))
 
-;; Notes:
+;;; Notes:
 ;;
 ;; This tool was written under the assumption that you're following Google's
-;; JavaScript style guide.
+;; JavaScript style guide (http://goo.gl/Ny5WxZ). See: http://goo.gl/
 ;;
-;; Pretty much all the algorithms being used in this file are O(n). This should
-;; be sufficiently fast, since all comparisons are being performed on interned
-;; atoms. If you actually have a JavaScript codebase large enough that this
-;; ends up being a problem, feel free to email me.
+;; Pretty much all the algorithms being used in this file are O(n).  This
+;; should be sufficiently fast, since all comparisons are being performed on
+;; interned atoms.  If you actually have a JavaScript codebase large enough
+;; that this ends up being a problem, feel free to email me.
 
 ;;; Code:
 
