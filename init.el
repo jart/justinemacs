@@ -5,17 +5,17 @@
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;; Version: 0.1
 ;; URL: http://github.com/jart/justinemacs
-
+;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to
 ;; deal in the Software without restriction, including without limitation the
 ;; rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
 ;; sell copies of the Software, and to permit persons to whom the Software is
 ;; furnished to do so, subject to the following conditions:
-
+;;
 ;; The above copyright notice and this permission notice shall be included in
 ;; all copies or substantial portions of the Software.
-
+;;
 ;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,14 +26,154 @@
 
 ;;; Commentary:
 ;;
-;;   I hope you enjoy my lovely emacs configuration <3
+;; I hope you enjoy my lovely emacs configuration <3
+;;
+;; Special care was taken to not add to startup cost.  This was accomplished by
+;; making liberal use of `eval-after-load'.
 
 ;;; Code:
 
-(when window-system
-  (let ((myfont "DejaVu Sans Mono-7"))
-    (set-frame-font myfont)
-    (add-to-list 'default-frame-alist (cons 'font myfont))))
+(defvar jart-dotfiles-dir
+  (file-name-directory
+   (or (buffer-file-name) load-file-name))
+  "Directory of .emacs.d where customisations are stored.")
+
+(defun jart-sudo (&optional path)
+  (interactive)
+  (find-alternate-file
+   (concat "/sudo:root@localhost:" (or path buffer-file-name))))
+
+(defun jart-unfill-paragraph ()
+  "Take a multi-line paragraph and make it into a single line.
+
+Thanks: Stefan Monnier <foo@acm.org>"
+  (interactive)
+  (let ((fill-column (point-max)))
+    (fill-paragraph nil)))
+
+(defun jart-cleanup-buffer ()
+  "Perform a bunch of operations on the whitespace content of a buffer."
+  (interactive)
+  (indent-region (point-min) (point-max))
+  (untabify (point-min) (point-max))
+  (delete-trailing-whitespace))
+
+(defun jart-recentf-ido-find-file ()
+  "Find a recent file using ido."
+  (interactive)
+  (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
+    (when file
+      (find-file file))))
+
+(defun jart-pretty-lambdas ()
+  "Make lambda render with the unicode symbol."
+  (font-lock-add-keywords
+   nil `(("(?\\(lambda\\>\\)"
+          (0 (progn (compose-region (match-beginning 1) (match-end 1)
+                                    ,(make-char 'greek-iso8859-7 107))
+                    nil))))))
+
+(defun jart-turn-off-tool-bar ()
+  "Callback to turn off ugly toolbar."
+  (tool-bar-mode -1))
+
+(defun jart-face-at-point ()
+  "Tell me who is responsible for ugly color under cursor."
+  (interactive)
+  (message "%S: %s" (face-at-point)
+           (face-documentation (face-at-point))))
+
+(defun jart-paredit-close-parenthesis ()
+  "Make the ')' key in `paredit-mode' more resilient to failure."
+  (interactive)
+  (condition-case exc
+      (paredit-close-parenthesis)
+    ('error
+     (insert ")"))))
+
+(defun jart-paredit-close-parenthesis-and-newline ()
+  "How do you expect me to rebalance my parens if you won't let
+  me type omg!"
+  (interactive)
+  (condition-case exc
+      (paredit-close-parenthesis-and-newline)
+    ('error
+     (insert ")"))))
+
+(defun jart-remove-elc-on-save ()
+  "If you're saving an elisp file, likely the .elc is no longer valid."
+  (make-local-variable 'after-save-hook)
+  (add-hook 'after-save-hook
+            (lambda ()
+              (if (file-exists-p (concat buffer-file-name "c"))
+                  (delete-file (concat buffer-file-name "c"))))))
+
+(defun jart-note ()
+  "Open a new note entry in my notes file."
+  (interactive)
+  (find-file "~/notes.org")
+  (goto-char (point-min))
+  (org-insert-heading)
+  (insert (concat "<" (format-time-string "%Y-%m-%dT%H:%M:%S%z") "> ")))
+
+(defun jart-yas-expand ()
+  "Expands a yasnippet macro.  Should be bound over to \\[transpose-chars]."
+  (interactive)
+  (condition-case exc
+      (yas-expand)
+    ('error
+     (transpose-chars nil))))
+
+(defun jart-js2-fix-paragraph-skipping ()
+  "Fix a bug with `js2-mode' that maintainers can't fix."
+  (defvar js2--fill-mode nil)
+  (defun js2--setup-paragraph-filling (&optional separator)
+    (setq c-paragraph-start (or separator js2-paragraph-start))
+    (let ((c-buffer-is-cc-mode t))
+      (make-local-variable 'paragraph-start)
+      (make-local-variable 'paragraph-separate)
+      (make-local-variable 'paragraph-ignore-fill-prefix)
+      (make-local-variable 'adaptive-fill-mode)
+      (make-local-variable 'adaptive-fill-regexp)
+      (c-setup-paragraph-variables)))
+  (defun js2--should-advise ()
+    (or (eq major-mode 'js2-mode)
+        (eq major-mode 'java-mode)))
+  (defadvice forward-paragraph (before js2--forward-paragraph-before activate)
+    (when (and (js2--should-advise)
+               (not js2--fill-mode))
+      (js2--setup-paragraph-filling "\n\n")))
+  (defadvice forward-paragraph (after js2--forward-paragraph-after activate)
+    (when (and (js2--should-advise)
+               (not js2--fill-mode))
+      (js2--setup-paragraph-filling)))
+  (defadvice backward-paragraph (before js2--backward-paragraph-before activate)
+    (when (and (js2--should-advise)
+               (not js2--fill-mode))
+      (js2--setup-paragraph-filling "\n\n")))
+  (defadvice backward-paragraph (after js2--backward-paragraph-after activate)
+    (when (and (js2--should-advise)
+               (not js2--fill-mode))
+      (js2--setup-paragraph-filling)))
+  (defadvice fill-paragraph (before js2--fill-paragraph-before activate)
+    (when (js2--should-advise)
+      (setq js2--fill-mode t)))
+  (defadvice fill-paragraph (after js2--fill-paragraph-after activate)
+    (when (js2--should-advise)
+      (setq js2--fill-mode nil))))
+
+(defun jart-markdown-updated-timestamp ()
+  "Update modified timestamp in Jekyll or Markdown file."
+  (interactive)
+  (when (or (eq major-mode 'markdown-mode)
+            (eq major-mode 'yaml-mode))
+    (save-excursion
+      (goto-char (point-min))
+      (let ((timestamp (format-time-string "%Y-%m-%dT%H:%M:%S%z")))
+        (when (search-forward-regexp "^updated: [-+: TZ0-9]+$" nil t)
+          (replace-match (concat "updated: " timestamp)))
+        (when (search-forward-regexp "^modified: [-+: TZ0-9]+$" nil t)
+          (replace-match (concat "modified: " timestamp)))))))
 
 (global-set-key (kbd "C-t") 'jart-yas-expand)
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
@@ -42,8 +182,6 @@
 (global-set-key (kbd "M-`") 'file-cache-minibuffer-complete)
 (global-set-key (kbd "M-.") 'find-tag)
 (global-set-key (kbd "M-,") 'pop-tag-mark)
-;; (global-set-key (kbd "M-{") 'jart-backward-paragraph)
-;; (global-set-key (kbd "M-}") 'jart-forward-paragraph)
 (global-set-key (kbd "C-x \\") 'align-regexp)
 (global-set-key (kbd "C-x f") 'jart-recentf-ido-find-file)
 (global-set-key (kbd "C-x g") 'magit-status)
@@ -108,32 +246,33 @@
   (global-set-key (kbd "C-x b") 'ibuffer)
   (global-unset-key (kbd "C-/")))
 
-(setq dotfiles-dir (file-name-directory
-                    (or (buffer-file-name) load-file-name))
-      jart-vendor-dirs (list "~/go/src/github.com/nsf/gocode/emacs"
-                             "~/go/src/github.com/dougm/goflymake"))
-(dolist (dir jart-vendor-dirs) (add-to-list 'load-path dir))
-(add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
+;; Load font and theme quickly and reliably.
+(condition-case exc
+    (progn
+      (add-to-list 'custom-theme-load-path (concat jart-dotfiles-dir "themes"))
+      (if window-system
+          (progn
+            (let ((myfont "DejaVu Sans Mono-7"))
+              (set-frame-font myfont)
+              (add-to-list 'default-frame-alist (cons 'font myfont)))
+            (load-theme 'zenburn t))
+        (progn
+          (if (string= (getenv "TERM") "xterm-256color")
+              (load-theme 'justine256 t)
+            (progn
+              (load-theme 'zenburn t)
+              (warn "For prettier colors: TERM=xterm-256color emacs -nw"))))))
+  ('error
+   (warn (format "Caught exception: [%s]" exc))))
 
+;; Initialise Melpa package manager.
 (require 'cl)
 (require 'package)
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
-;; (byte-recompile-directory (expand-file-name "~/.emacs.d/elpa") 0)
 (package-initialize)
 
-(prefer-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-(if (fboundp 'tooltip-mode) (tooltip-mode -1))
-(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-(when window-system
-  (mouse-wheel-mode t)
-  (blink-cursor-mode -1)
-  (add-hook 'before-make-frame-hook 'jart-turn-off-tool-bar))
-
+;; Custom settings.
 (custom-set-variables
  '(ac-auto-show-menu 0.01)
  '(ac-candidate-menu-min 1)
@@ -151,7 +290,7 @@
  '(comment-auto-fill-only-comments t)
  '(compilation-scroll-output 'first-error)
  '(css-indent-offset 2)
- '(custom-file (concat dotfiles-dir "custom.el"))
+ '(custom-file (concat jart-dotfiles-dir "custom.el"))
  '(diff-switches "-u")
  '(echo-keystrokes 0.1)
  '(ediff-window-setup-function 'ediff-setup-windows-plain)
@@ -204,7 +343,7 @@
  '(require-final-newline t)
  '(ring-bell-function 'ignore)
  '(save-place t)
- '(save-place-file (concat dotfiles-dir "places"))
+ '(save-place-file (concat jart-dotfiles-dir "places"))
  '(sh-basic-offset 2)
  '(sh-indentation 2)
  '(shift-select-mode nil)
@@ -220,17 +359,30 @@
  '(web-mode-tag-auto-close-style 1)
  '(whitespace-line-column 80)
  '(whitespace-style '(face tabs tab-mark lines-tail trailing))
- '(yas-snippet-dirs (list (concat dotfiles-dir "snippets"))))
+ '(yas-snippet-dirs (list (concat jart-dotfiles-dir "snippets"))))
 
+;; UI enhancements.
+(random t)
+(prefer-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+(if (fboundp 'tooltip-mode) (tooltip-mode -1))
+(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
+(when window-system
+  (mouse-wheel-mode t)
+  (blink-cursor-mode -1)
+  (add-hook 'before-make-frame-hook 'jart-turn-off-tool-bar))
 (if (fboundp 'x-cut-buffer-or-selection-value)
     (setq x-select-enable-clipboard t
           interprogram-paste-function 'x-cut-buffer-or-selection-value))
 (defalias 'yes-or-no-p 'y-or-n-p)
-(random t)
 (delete 'try-expand-line hippie-expand-try-functions-list)
 (delete 'try-expand-list hippie-expand-try-functions-list)
 (add-to-list 'completion-ignored-extensions ".d")  ;; "cc -MD" depends files
 
+;; Enable global modes.
 (ido-mode t)
 (auto-fill-mode 1)
 (show-paren-mode 1)
@@ -245,7 +397,9 @@
 (ac-config-default)
 (yas-global-mode 1)
 (add-hook 'after-init-hook #'global-flycheck-mode)
+(add-hook 'text-mode-hook 'flyspell-mode)
 
+;; Load some libraries.
 (require 'saveplace)
 (require 'ffap)
 (require 'uniquify)
@@ -254,184 +408,21 @@
 (require 'pager)
 (require 'pager-default-keybindings)
 
-(if window-system
-    (load-theme 'zenburn t)
-  (if (string= (getenv "TERM") "xterm-256color")
-      (load-theme 'justine256 t)
-    (progn
-      (load-theme 'zenburn t)
-      (warn "For much prettier colors run: TERM=xterm-256color emacs -nw"))))
-
-;; Performance Improvement: This is another not so great feature that makes
-;; emacs slower by doing a zillion stat() calls every time I open a file.
-(require 'files)
-(defun dir-locals-find-file (file) nil)
-
-(defun jart-sudo (&optional path)
-  (interactive)
-  (find-alternate-file
-   (concat "/sudo:root@localhost:" (or path buffer-file-name))))
-
-(defun jart-forward-paragraph ()
-  "Same as `forward-paragraph', but temporarily resets the
-paragraph separators to \"\\n\\n\". This is necessary because
-many modes (e.g. java-mode) will redefine the definition of a
-paragraph so that special bodies of text (e.g. javadoc @sections)
-can be filled correctly."
-  (interactive)
-  (let ((paragraph-start "\n\n")
-        (paragraph-end "\n\n"))
-    (forward-paragraph)))
-
-(defun jart-backward-paragraph ()
-  "Opposite of `jart-forward-paragraph'."
-  (interactive)
-  (let ((paragraph-start "\n\n")
-        (paragraph-end "\n\n"))
-    (backward-paragraph)))
-
-(defun jart-unfill-paragraph ()
-  "The opposite of fill-paragraph. Takes a multi-line paragraph
-and makes it into a single line of text.  Thanks: Stefan Monnier
-<foo at acm.org>"
-  (interactive)
-  (let ((fill-column (point-max)))
-    (fill-paragraph nil)))
-
-(defun jart-cleanup-buffer ()
-  "Perform a bunch of operations on the whitespace content of a buffer."
-  (interactive)
-  (indent-region (point-min) (point-max))
-  (untabify (point-min) (point-max))
-  (delete-trailing-whitespace))
-
-(defun jart-recentf-ido-find-file ()
-  "Find a recent file using ido."
-  (interactive)
-  (let ((file (ido-completing-read "Choose recent file: " recentf-list nil t)))
-    (when file
-      (find-file file))))
-
-(defun jart-run-coding-hook ()
-  "Enable things that are convenient across all coding buffers."
-  (run-hooks 'jart-coding-hook))
-
-(defun jart-pretty-lambdas ()
-  (font-lock-add-keywords
-   nil `(("(?\\(lambda\\>\\)"
-          (0 (progn (compose-region (match-beginning 1) (match-end 1)
-                                    ,(make-char 'greek-iso8859-7 107))
-                    nil))))))
-
-(defun jart-local-comment-auto-fill ()
-  (set (make-local-variable 'comment-auto-fill-only-comments) t)
-  (auto-fill-mode t))
-
-(defun jart-turn-on-paredit ()
-  (paredit-mode t))
-
-(defun jart-turn-off-tool-bar ()
-  (tool-bar-mode -1))
-
-(defun jart-face-at-point ()
-  "Tells me who is responsible for ugly color under cursor"
-  (interactive)
-  (message "%S: %s" (face-at-point)
-           (face-documentation (face-at-point))))
-
-(defmacro jart-nevar-fail (primary failover)
-  "Runs primary code.  If primary code fails, then executes
-  failover code."
-  `(condition-case exc
-       ,primary
-     ('error
-      (message (format "Caught exception: [%s]" exc))
-      ,failover)))
-
-(defun jart-paredit-close-parenthesis ()
-  "How do you expect me to rebalance my parens if you won't let
-  me type omg!"
-  (interactive)
-  (jart-nevar-fail (paredit-close-parenthesis)
-                   (insert ")")))
-
-(defun jart-paredit-close-parenthesis-and-newline ()
-  "How do you expect me to rebalance my parens if you won't let
-  me type omg!"
-  (interactive)
-  (jart-nevar-fail (paredit-close-parenthesis-and-newline)
-                   (insert ")")))
-
-(defun jart-remove-elc-on-save ()
-  "If you're saving an elisp file, likely the .elc is no longer valid."
-  (make-local-variable 'after-save-hook)
-  (add-hook 'after-save-hook
-            (lambda ()
-              (if (file-exists-p (concat buffer-file-name "c"))
-                  (delete-file (concat buffer-file-name "c"))))))
-
-(defun jart-note ()
-  (interactive)
-  (find-file "~/notes.org")
-  (goto-char (point-min))
-  (org-insert-heading)
-  (insert (concat "<" (format-time-string "%Y-%m-%dT%H:%M:%S%z") "> ")))
-
-(defun jart-yas-expand ()
-  "Expands a yasnippet macro.  Should be bound over to \\[transpose-chars]."
-  (interactive)
-  (condition-case exc
-      (yas-expand)
-    ('error
-     (transpose-chars nil))))
-
-(defun jart-js2-fix-paragraph-skipping ()
-  "Fixes a bug with js2-mode that maintainers can't fix."
-  (defvar js2--fill-mode nil)
-  (defun js2--setup-paragraph-filling (&optional separator)
-    (setq c-paragraph-start (or separator js2-paragraph-start))
-    (let ((c-buffer-is-cc-mode t))
-      (make-local-variable 'paragraph-start)
-      (make-local-variable 'paragraph-separate)
-      (make-local-variable 'paragraph-ignore-fill-prefix)
-      (make-local-variable 'adaptive-fill-mode)
-      (make-local-variable 'adaptive-fill-regexp)
-      (c-setup-paragraph-variables)))
-  (defun js2--should-advise ()
-    (or (eq major-mode 'js2-mode)
-        (eq major-mode 'java-mode)))
-  (defadvice forward-paragraph (before js2--forward-paragraph-before activate)
-    (when (and (js2--should-advise)
-               (not js2--fill-mode))
-      (js2--setup-paragraph-filling "\n\n")))
-  (defadvice forward-paragraph (after js2--forward-paragraph-after activate)
-    (when (and (js2--should-advise)
-               (not js2--fill-mode))
-      (js2--setup-paragraph-filling)))
-  (defadvice backward-paragraph (before js2--backward-paragraph-before activate)
-    (when (and (js2--should-advise)
-               (not js2--fill-mode))
-      (js2--setup-paragraph-filling "\n\n")))
-  (defadvice backward-paragraph (after js2--backward-paragraph-after activate)
-    (when (and (js2--should-advise)
-               (not js2--fill-mode))
-      (js2--setup-paragraph-filling)))
-  (defadvice fill-paragraph (before js2--fill-paragraph-before activate)
-    (when (js2--should-advise)
-      (setq js2--fill-mode t)))
-  (defadvice fill-paragraph (after js2--fill-paragraph-after activate)
-    (when (js2--should-advise)
-      (setq js2--fill-mode nil))))
-
+;; File extension to mode mappings.
 (add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 (add-to-list 'auto-mode-alist '("\\.\\(html\\|xml\\|soy\\|css\\)$" . web-mode))
 
-(add-hook 'jart-coding-hook 'jart-pretty-lambdas)
-(add-hook 'text-mode-hook 'flyspell-mode)
+;; Performance Improvement: This is another not so great feature that makes
+;; emacs slower by doing a zillion stat() calls every time I open a file.
+(require 'files)
+(defun dir-locals-find-file (file)
+  "Override default function to do nothing with FILE."
+  nil)
 
+;; Make return auto-indent and work inside comments.
 (let ((modes '((cc-mode     java-mode-map        'c-indent-new-comment-line)
                (go-mode     go-mode-map          'newline-and-indent)
                (js2-mode    js2-mode-map         'js2-line-break)
@@ -499,27 +490,18 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
                "\\)\\)\\s-*")
        "Matches empty jsdoc tags.")
      (define-key js2-mode-map (kbd "M-/") 'auto-complete)
+     (add-hook 'before-save-hook 'js2-closure-save-hook)
      (jart-js2-fix-paragraph-skipping)))
 
 (eval-after-load 'markdown-mode
   '(progn
-     (defun jart-markdown-updated-timestamp ()
-       (interactive)
-       (when (or (eq major-mode 'markdown-mode)
-                 (eq major-mode 'yaml-mode))
-         (message "hello")
-         (save-excursion
-           (goto-char (point-min))
-           (let ((timestamp (format-time-string "%Y-%m-%dT%H:%M:%S%z")))
-             (when (search-forward-regexp "^updated: [-+: TZ0-9]+$" nil t)
-               (replace-match (concat "updated: " timestamp)))
-             (when (search-forward-regexp "^modified: [-+: TZ0-9]+$" nil t)
-               (replace-match (concat "modified: " timestamp)))))))
      (add-hook 'before-save-hook 'jart-markdown-updated-timestamp)
      (add-hook 'markdown-mode-hook 'flyspell-mode)))
 
 (eval-after-load 'go-mode
   '(progn
+     (add-to-list 'load-path "~/go/src/github.com/nsf/gocode/emacs")
+     (add-to-list 'load-path "~/go/src/github.com/dougm/goflymake")
      (require 'go-flymake)
      (require 'go-flycheck)
      (require 'go-autocomplete)
@@ -630,7 +612,7 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
      (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode)
      (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
      (add-hook 'emacs-lisp-mode-hook 'jart-remove-elc-on-save)
-     (add-hook 'emacs-lisp-mode-hook 'jart-run-coding-hook)
+     (add-hook 'emacs-lisp-mode-hook 'jart-pretty-lambdas)
      (add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)))
 
 (eval-after-load 'paredit
@@ -689,7 +671,7 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
      (define-key python-mode-map (kbd "C-c l") "lambda")
      (define-key python-mode-map (kbd "M-/") 'hippie-expand)
      (ad-activate 'python-calculate-indentation)
-     (add-hook 'python-mode-hook 'jart-run-coding-hook)))
+     (add-hook 'python-mode-hook 'jart-pretty-lambdas)))
 
 (eval-after-load 'autorevert
   '(progn
@@ -699,23 +681,4 @@ and makes it into a single line of text.  Thanks: Stefan Monnier
        (font-lock-fontify-buffer))
      (add-hook 'auto-revert-mode-hook 'jart-auto-revert-mode-hook)))
 
-(require 'server)
-(if (not (server-running-p))
-    (server-start))
-
-;; (when (string= (getenv "USER") "jart")
-;;   (add-to-list 'load-path "/home/jart-includeme")
-;;   (require 'includeme)
-;;   (define-key c-mode-base-map (kbd "C-c C-h") 'includeme)
-;;   (add-to-list 'load-path "/home/jart/disaster")
-;;   (require 'disaster)
-;;   (define-key c-mode-base-map (kbd "C-c C-d") 'disaster))
-
-(load "/home/jart/occupywallst.org/assets/closure-library/closure/bin/labs/code/closure.el")
-(load "/home/jart/occupywallst.org/assets/closure-library/closure/bin/labs/code/closure_test.el")
-
 ;;; init.el ends here
-;; Local Variables:
-;; coding: utf-8
-;; byte-compile-warnings: (not cl-functions)
-;; End:
