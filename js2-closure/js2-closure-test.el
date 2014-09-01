@@ -55,7 +55,7 @@
 
 (ert-deftest determine-requires--whitelist ()
   (let ((js2-closure-remove-unused t)
-        (js2-closure-whitelist '((foo)))
+        (js2-closure-whitelist '("foo"))
         (ast (make-ast "goog.require('foo');")))
     (should (equal (js2-closure--determine-requires ast)
                    '("foo")))))

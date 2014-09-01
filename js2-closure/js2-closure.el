@@ -76,11 +76,9 @@ disabling this feature."
   :group 'js2-mode)
 
 (defcustom js2-closure-whitelist
-  '((goog testing asserts))
-  "List of goog.require statements that should never be removed.
-Each namespace should be specified as an ordered list of atoms,
-rather than a dotted string."
-  :type 'sexp
+  '("goog.testing.asserts")
+  "List of goog.require namespaces that should never be removed."
+  :type '(repeat string)
   :group 'js2-mode)
 
 (defcustom js2-closure-provides-file
@@ -198,7 +196,8 @@ making up that identifier."
     (sort (let (result)
             (dolist (item requires)
               (when (or (not js2-closure-remove-unused)
-                        (member item js2-closure-whitelist)
+                        (member (js2-closure--identifier-to-string item)
+                                js2-closure-whitelist)
                         (member item references))
                 (let ((namespace (js2-closure--identifier-to-string item)))
                   (push namespace result))))
