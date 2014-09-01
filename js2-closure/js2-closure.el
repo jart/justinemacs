@@ -24,19 +24,16 @@
 ;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 ;; IN THE SOFTWARE.
 
-;;; Commentary:
-;;
-;;   I hope this software makes your life happier <3
-
 ;;; Installation:
 ;;
 ;; First you need to be using `js2-mode' and Google Closure.  The next step is
 ;; to run the script that crawls all your JavaScript sources for provide
 ;; statements.  For example:
 ;;
-;;   ~/.emacs.d/js2-closure-provides.sh \
+;;   js2-closure-provides.sh \
 ;;     ~/justinetunney.com/assets/closure/closure/goog \
-;;     ~/justinetunney.com/assets/js/jart
+;;     ~/justinetunney.com/assets/js/jart \
+;;     >~/.emacs.d/js2-closure-provides.sh
 ;;
 ;; That will generate an index file in the same directory which should have the
 ;; same path as `js2-closure-provides-file'.  You have to regenerate this file
@@ -62,11 +59,10 @@
 ;;
 ;; This tool was written under the assumption that you're following Google's
 ;; JavaScript style guide (http://goo.gl/Ny5WxZ). See: http://goo.gl/
+
+;;; Commentary:
 ;;
-;; Pretty much all the algorithms being used in this file are O(n).  This
-;; should be sufficiently fast, since all comparisons are being performed on
-;; interned atoms.  If you actually have a JavaScript codebase large enough
-;; that this ends up being a problem, feel free to email me.
+;; I hope this software makes your life happier <3
 
 ;;; Code:
 
@@ -94,10 +90,29 @@ rather than a dotted string."
   :group 'js2-mode)
 
 (defvar js2-closure-provides nil
-  "List of all closure provided namespaces.")
+  "Hierarchy of all closure provided namespaces.")
 
-(defvar js2-closure-globals nil
-  "List of all top level labels, derived from `js2-closure-provides'.")
+(defun js2-closure--make-tree (list)
+  "Turn a sorted LIST of identifiers into a tree."
+  (let (result)
+    (while list
+      (let* (sublist
+             (name (caar list))
+             (is-leaf (null (cdar list))))
+        (while (eq name (caar list))
+          (let ((item (pop list)))
+            (when (cdr item)
+              (push (cdr item) sublist))))
+        (let ((subtree (js2-closure--make-tree (nreverse sublist))))
+          (push (cons name (cons is-leaf subtree)) result))))
+    (nreverse result)))
+
+(defun js2-closure--member-tree (identifier tree)
+  "Return t if IDENTIFIER is a member of TREE."
+  (let ((branch (assq (car identifier) tree)))
+    (if (and branch (cdr identifier))
+        (js2-closure--member-tree (cdr identifier) (cddr branch))
+      (cadr branch))))
 
 (defun js2-closure--make-identifier (node &optional names)
   "Turn a NODE (or string) into an an ordered list of interned NAMES."
@@ -116,8 +131,8 @@ rather than a dotted string."
   "Convert IDENTIFIER into a dotted string."
   (mapconcat 'symbol-name identifier "."))
 
-(defun js2-closure--crawl (on-call on-identifier)
-  "Crawl `js2-mode' buffer AST and invoke callbacks on nodes.
+(defun js2-closure--crawl (ast on-call on-identifier)
+  "Crawl `js2-mode' AST and invoke callbacks on nodes.
 
 ON-CALL will be invoked for all `js2-call-node' nodes, passing
 the node itself as the first argument.
@@ -126,8 +141,8 @@ ON-IDENTIFIER is invoked for all identifiers, passing as an
 argument the last `js2-prop-get-node' in the chain of labels
 making up that identifier."
   (let (last)
-    (js2-visit-ast-root
-     js2-mode-ast
+    (js2-visit-ast
+     ast
      (lambda (node endp)
        (unless endp
          (when (js2-call-node-p node)
@@ -144,7 +159,7 @@ making up that identifier."
     (when last
       (funcall on-call last))))
 
-(defun js2-closure--determine-closure-requires ()
+(defun js2-closure--determine-requires (ast)
   "Return a sorted list of closure namespaces that should be imported."
   (let (provides requires references)
     (let ((on-call
@@ -167,20 +182,19 @@ making up that identifier."
           (on-identifier
            (lambda (node)
              (let ((item (js2-closure--make-identifier node)))
-               (when (memq (car item) js2-closure-globals)
-                 (while item
-                   (cond ((member item provides)
-                          (setq item nil))
-                         ((member item requires)
-                          (when (not (member item references))
-                            (push item references))
-                          (setq item nil))
-                         ((member item js2-closure-provides)
-                          (when (not (member item references))
-                            (push item references))
-                          (setq item nil)))
-                   (setq item (reverse (cdr (reverse item))))))))))
-      (js2-closure--crawl on-call on-identifier))
+               (while item
+                 (cond ((member item provides)
+                        (setq item nil))
+                       ((member item requires)
+                        (when (not (member item references))
+                          (push item references))
+                        (setq item nil))
+                       ((js2-closure--member-tree item js2-closure-provides)
+                        (when (not (member item references))
+                          (push item references))
+                        (setq item nil)))
+                 (setq item (butlast item)))))))
+      (js2-closure--crawl ast on-call on-identifier))
     (sort (let (result)
             (dolist (item requires)
               (when (or (not js2-closure-remove-unused)
@@ -235,20 +249,14 @@ since syntax coloring might take some time to kick back in."
   (unless js2-closure-provides
     (js2-closure-reload))
   (js2-closure--replace-closure-requires
-   (js2-closure--determine-closure-requires)))
+   (js2-closure--determine-requires js2-mode-ast)))
 
 ;;;###autoload
 (defun js2-closure-reload ()
   "Load precomputed list of provided namespaces into memory."
   (interactive)
   (load js2-closure-provides-file)
-  (setq js2-closure-globals nil)
-  (dolist (item js2-closure-provides js2-closure-globals)
-    (when (not (memq (car item) js2-closure-globals))
-      (push (car item) js2-closure-globals)))
-  (dolist (item js2-global-externs)
-    (when (not (memq (intern item) js2-closure-globals))
-      (push (intern item) js2-closure-globals))))
+  (setq js2-closure-provides (js2-closure--make-tree js2-closure-provides)))
 
 ;;;###autoload
 (defun js2-closure-save-hook ()
