@@ -115,7 +115,7 @@ rather than a dotted string."
          (let (result)
            (nreverse
             (dolist (label (split-string node "\\.") result)
-              (setq result (cons (intern label) result))))))))
+              (push (intern label) result)))))))
 
 (defun js2-closure--identifier-to-string (identifier)
   "Convert IDENTIFIER into a dotted string."
@@ -123,7 +123,7 @@ rather than a dotted string."
     (mapconcat 'identity
                (nreverse
                 (dolist (label identifier labels)
-                  (setq labels (cons (symbol-name label) labels))))
+                  (push (symbol-name label) labels)))
                ".")))
 
 (defun js2-closure--crawl (on-call on-identifier)
@@ -167,13 +167,13 @@ making up that identifier."
                       (let ((item (js2-closure--make-identifier
                                    (js2-string-node-value arg1))))
                         (when (not (member item provides))
-                          (setq provides (cons item provides)))))
+                          (push item provides))))
                      ((and (equal funk '(goog require))
                            (js2-string-node-p arg1))
                       (let ((item (js2-closure--make-identifier
                                    (js2-string-node-value arg1))))
                         (when (not (member item requires))
-                          (setq requires (cons item requires)))))))))
+                          (push item requires))))))))
           (on-identifier
            (lambda (node)
              (let ((item (js2-closure--make-identifier node)))
@@ -183,11 +183,11 @@ making up that identifier."
                           (setq item nil))
                          ((member item requires)
                           (when (not (member item references))
-                            (setq references (cons item references)))
+                            (push item references))
                           (setq item nil))
                          ((member item js2-closure-provides)
                           (when (not (member item references))
-                            (setq references (cons item references)))
+                            (push item references))
                           (setq item nil)))
                    (setq item (reverse (cdr (reverse item))))))))))
       (js2-closure--crawl on-call on-identifier))
@@ -197,12 +197,12 @@ making up that identifier."
                         (member item js2-closure-whitelist)
                         (member item references))
                 (let ((namespace (js2-closure--identifier-to-string item)))
-                  (setq result (cons namespace result)))))
+                  (push namespace result))))
             (dolist (item references result)
               (when (member item references)
                 (let ((namespace (js2-closure--identifier-to-string item)))
                   (when (not (member namespace result))
-                    (setq result (cons namespace result)))))))
+                    (push namespace result))))))
           'string<)))
 
 (defun js2-closure--replace-closure-requires (namespaces)
@@ -256,10 +256,10 @@ since syntax coloring might take some time to kick back in."
   (setq js2-closure-globals nil)
   (dolist (item js2-closure-provides js2-closure-globals)
     (when (not (memq (car item) js2-closure-globals))
-      (setq js2-closure-globals (cons (car item) js2-closure-globals))))
+      (push (car item) js2-closure-globals)))
   (dolist (item js2-global-externs)
     (when (not (memq (intern item) js2-closure-globals))
-      (setq js2-closure-globals (cons (intern item) js2-closure-globals)))))
+      (push (intern item) js2-closure-globals))))
 
 ;;;###autoload
 (defun js2-closure-save-hook ()
