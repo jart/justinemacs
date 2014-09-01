@@ -88,9 +88,7 @@ rather than a dotted string."
   :group 'js2-mode)
 
 (defcustom js2-closure-provides-file
-  (concat (file-name-directory
-           (or (buffer-file-name) load-file-name))
-          "js2-closure-provides.el")
+  (concat user-emacs-directory "js2-closure-provides.el")
   "Filename of generated elisp file listing all provided namespaces."
   :type 'file
   :group 'js2-mode)
@@ -112,19 +110,11 @@ rather than a dotted string."
         ((js2-node-p node)
          (cons (intern (js2-prop-node-name node)) names))
         ((stringp node)
-         (let (result)
-           (nreverse
-            (dolist (label (split-string node "\\.") result)
-              (push (intern label) result)))))))
+         (mapcar 'intern (split-string node "\\.")))))
 
 (defun js2-closure--identifier-to-string (identifier)
   "Convert IDENTIFIER into a dotted string."
-  (let (labels)
-    (mapconcat 'identity
-               (nreverse
-                (dolist (label identifier labels)
-                  (push (symbol-name label) labels)))
-               ".")))
+  (mapconcat 'symbol-name identifier "."))
 
 (defun js2-closure--crawl (on-call on-identifier)
   "Crawl `js2-mode' buffer AST and invoke callbacks on nodes.
@@ -236,8 +226,7 @@ since syntax coloring might take some time to kick back in."
                                (forward-line)
                                (point))))
     (while namespaces
-      (insert (format "goog.require('%s');\n" (car namespaces)))
-      (setq namespaces (cdr namespaces)))))
+      (insert (format "goog.require('%s');\n" (pop namespaces))))))
 
 ;;;###autoload
 (defun js2-closure-fix ()

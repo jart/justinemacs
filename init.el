@@ -33,11 +33,6 @@
 
 ;;; Code:
 
-(defvar jart-dotfiles-dir
-  (file-name-directory
-   (or (buffer-file-name) load-file-name))
-  "Directory of .emacs.d where customisations are stored.")
-
 (defun jart-sudo (&optional path)
   (interactive)
   (find-alternate-file
@@ -86,7 +81,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (defun jart-paredit-close-parenthesis ()
   "Make the ')' key in `paredit-mode' more resilient to failure."
   (interactive)
-  (condition-case exc
+  (condition-case nil
       (paredit-close-parenthesis)
     ('error
      (insert ")"))))
@@ -95,7 +90,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
   "How do you expect me to rebalance my parens if you won't let
   me type omg!"
   (interactive)
-  (condition-case exc
+  (condition-case nil
       (paredit-close-parenthesis-and-newline)
     ('error
      (insert ")"))))
@@ -119,7 +114,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (defun jart-yas-expand ()
   "Expands a yasnippet macro.  Should be bound over to \\[transpose-chars]."
   (interactive)
-  (condition-case exc
+  (condition-case nil
       (yas-expand)
     ('error
      (transpose-chars nil))))
@@ -249,7 +244,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 ;; Load font and theme quickly and reliably.
 (condition-case exc
     (progn
-      (add-to-list 'custom-theme-load-path (concat jart-dotfiles-dir "themes"))
+      (add-to-list 'custom-theme-load-path (concat user-emacs-directory "themes"))
       (if window-system
           (progn
             (let ((myfont "DejaVu Sans Mono-7"))
@@ -290,7 +285,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(comment-auto-fill-only-comments t)
  '(compilation-scroll-output 'first-error)
  '(css-indent-offset 2)
- '(custom-file (concat jart-dotfiles-dir "custom.el"))
+ '(custom-file (concat user-emacs-directory "custom.el"))
  '(diff-switches "-u")
  '(echo-keystrokes 0.1)
  '(ediff-window-setup-function 'ediff-setup-windows-plain)
@@ -343,7 +338,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(require-final-newline t)
  '(ring-bell-function 'ignore)
  '(save-place t)
- '(save-place-file (concat jart-dotfiles-dir "places"))
+ '(save-place-file (concat user-emacs-directory "places"))
  '(sh-basic-offset 2)
  '(sh-indentation 2)
  '(shift-select-mode nil)
@@ -359,7 +354,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(web-mode-tag-auto-close-style 1)
  '(whitespace-line-column 80)
  '(whitespace-style '(face tabs tab-mark lines-tail trailing))
- '(yas-snippet-dirs (list (concat jart-dotfiles-dir "snippets"))))
+ '(yas-snippet-dirs (list (concat user-emacs-directory "snippets"))))
 
 ;; UI enhancements.
 (random t)
