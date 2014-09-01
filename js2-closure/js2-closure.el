@@ -96,9 +96,9 @@ rather than a dotted string."
   "Turn a sorted LIST of identifiers into a tree."
   (let (result)
     (while list
-      (let* (sublist
-             (name (caar list))
-             (is-leaf (null (cdar list))))
+      (let (sublist
+            (name (caar list))
+            (is-leaf (null (cdar list))))
         (while (eq name (caar list))
           (let ((item (pop list)))
             (when (cdr item)
