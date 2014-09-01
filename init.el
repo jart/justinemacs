@@ -396,7 +396,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-hook 'text-mode-hook 'flyspell-mode)
 
 ;; Load some libraries.
-(add-to-list 'load-path (concat user-emacs-directory "js2-closure/"))
+(add-to-list 'load-path "~/code/js2-closure/")
 (require 'js2-closure)
 (require 'saveplace)
 (require 'ffap)
