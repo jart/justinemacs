@@ -396,8 +396,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-hook 'text-mode-hook 'flyspell-mode)
 
 ;; Load some libraries.
-(add-to-list 'load-path "~/code/js2-closure/")
-(require 'js2-closure)
 (require 'saveplace)
 (require 'ffap)
 (require 'uniquify)
@@ -448,13 +446,11 @@ Thanks: Stefan Monnier <foo@acm.org>"
      (defconst js2-jsdoc-empty-tag-regexp
        (concat "^\\s-*\\*+\\s-*\\(@\\(?:"
                (regexp-opt
-                '("addon"
-                  "author"
+                '("author"
                   "class"
                   "const"
                   "constant"
                   "constructor"
-                  "ngInject"
                   "constructs"
                   "deprecated"
                   "desc"
@@ -473,6 +469,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
                   "inner"
                   "interface"
                   "license"
+                  "ngInject"
                   "noalias"
                   "noshadow"
                   "notypecheck"
@@ -484,7 +481,9 @@ Thanks: Stefan Monnier <foo@acm.org>"
                   "protected"
                   "public"
                   "static"
-                  "supported"))
+                  "supported"
+                  "typedef"
+                  "addon"))
                "\\)\\)\\s-*")
        "Matches empty jsdoc tags.")
      (define-key js2-mode-map (kbd "M-/") 'auto-complete)
@@ -507,11 +506,14 @@ Thanks: Stefan Monnier <foo@acm.org>"
      (define-key ac-mode-map (kbd "M-/") 'auto-complete)
      (define-key go-mode-map (kbd "M-.") 'godef-jump)
      (define-key go-mode-map (kbd "C-c C-a") 'go-import-add)
+     (define-key go-mode-map (kbd "C-c C-r") 'go-remove-unused-imports)
      (define-key go-mode-map (kbd "C-c C-d") 'godef-describe)
      (define-key go-mode-map (kbd "C-c C-j") 'godef-jump)
      (define-key go-mode-map (kbd "C-c C-r") 'go-remove-unused-imports)
-     (add-hook 'before-save-hook 'gofmt-before-save)
-     (add-hook 'go-mode-hook 'flyspell-prog-mode)))
+     (defun jart-go-mode-hook ()
+       (set (make-local-variable 'whitespace-line-column) 10000))
+     (add-hook 'go-mode-hook 'jart-go-mode-hook)
+     (add-hook 'before-save-hook 'gofmt-before-save)))
 
 (eval-after-load 'asm-mode
   '(progn
