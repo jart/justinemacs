@@ -170,6 +170,20 @@ Thanks: Stefan Monnier <foo@acm.org>"
         (when (search-forward-regexp "^modified: [-+: TZ0-9]+$" nil t)
           (replace-match (concat "modified: " timestamp)))))))
 
+(defun jart-prev-blank-line ()
+  "Set point to previous blank line."
+  (interactive)
+  (when (looking-at "^$")
+    (previous-line))
+  (search-backward-regexp "^$" nil t))
+
+(defun jart-next-blank-line ()
+  "Set point to next blank line."
+  (interactive)
+  (when (looking-at "^$")
+    (forward-line))
+  (search-forward-regexp "^$" nil t))
+
 (global-set-key (kbd "C-t") 'jart-yas-expand)
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
 (global-set-key (kbd "M-Q") 'jart-unfill-paragraph)
@@ -177,6 +191,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "M-`") 'file-cache-minibuffer-complete)
 (global-set-key (kbd "M-.") 'find-tag)
 (global-set-key (kbd "M-,") 'pop-tag-mark)
+(global-set-key (kbd "M-{") 'jart-prev-blank-line)
+(global-set-key (kbd "M-}") 'jart-next-blank-line)
 (global-set-key (kbd "C-x \\") 'align-regexp)
 (global-set-key (kbd "C-x f") 'jart-recentf-ido-find-file)
 (global-set-key (kbd "C-x g") 'magit-status)
