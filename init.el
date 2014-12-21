@@ -682,12 +682,17 @@ Thanks: Stefan Monnier <foo@acm.org>"
                  (ignore-errors (backward-sexp))
                  (setq ad-return-value (current-indentation)))
              ad-do-it))))
+     (defun jart-python-mode-hook ()
+       (interactive)
+       (flycheck-mode -1))
+     (setq python-indent-offset 2)
      (define-key python-mode-map (kbd "C-c c") 'jart-python-check)
      (define-key python-mode-map (kbd "C-c C") 'jart-python-check-dir)
      (define-key python-mode-map (kbd "C-c l") "lambda")
      (define-key python-mode-map (kbd "M-/") 'hippie-expand)
      (ad-activate 'python-calculate-indentation)
-     (add-hook 'python-mode-hook 'jart-pretty-lambdas)))
+     (add-hook 'python-mode-hook 'jart-pretty-lambdas)
+     (add-hook 'python-mode-hook 'jart-python-mode-hook)))
 
 (eval-after-load 'autorevert
   '(progn
