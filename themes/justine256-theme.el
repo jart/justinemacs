@@ -164,7 +164,7 @@ Semantic, and Ansi-Color faces are included.")
    `(flyspell-incorrect ((,class (:foreground ,red-1))))
    ;; whitespace-mode
    `(whitespace-space ((t (:foreground "#333" :background nil))))
-   `(whitespace-tab ((t (:foreground "#333" :background nil))))
+   `(whitespace-tab ((t (:foreground "#666" :background nil))))
    `(whitespace-newline ((t (:foreground "#333" :background nil))))
    `(whitespace-line ((t (:background "gray30" :foreground nil))))
    ;; Semantic faces
@@ -206,7 +206,9 @@ Semantic, and Ansi-Color faces are included.")
    `(git-gutter:separator ((,class (:inherit gutter :foreground "cyan"))))
    `(git-gutter:unchanged ((,class (:inherit gutter))))
    ;; Skewer
-   `(skewer-error-face ((,class (:inherit error)))))
+   `(skewer-error-face ((,class (:inherit error))))
+   ;; MMM
+   `(mmm-default-submode-face ((,class nil))))
   (custom-theme-set-variables
    'justine256
    `(ansi-color-names-vector [,alum-7 ,red-0 ,cham-0 ,butter-1

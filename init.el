@@ -350,6 +350,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(magit-stage-all-confirm nil)
  '(magit-unstage-all-confirm nil)
  '(make-backup-files nil)
+ '(mmm-global-mode 'maybe)
  '(mouse-yank-at-point t)
  '(python-indent 2)
  '(require-final-newline t)
@@ -426,6 +427,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 (add-to-list 'auto-mode-alist '("\\.\\(html\\|xml\\|soy\\|css\\)$" . web-mode))
+(add-to-list 'auto-mode-alist '("\\.rl$" . mmm-mode))
 
 ;; Performance Improvement: This is another not so great feature that makes
 ;; emacs slower by doing a zillion stat() calls every time I open a file.
@@ -538,11 +540,15 @@ Thanks: Stefan Monnier <foo@acm.org>"
      (define-key go-mode-map (kbd "C-c C-d") 'godef-describe)
      (define-key go-mode-map (kbd "C-c C-j") 'godef-jump)
      (define-key go-mode-map (kbd "C-c C-r") 'go-remove-unused-imports)
-     (defun jart-go-mode-hook ()
+     (defun jart--go-mode-hook ()
        (flycheck-mode -1)
        (set (make-local-variable 'whitespace-line-column) 10000))
-     (add-hook 'go-mode-hook 'jart-go-mode-hook)
-     (add-hook 'before-save-hook 'gofmt-before-save)))
+     (defun jart--gofmt-before-save ()
+       ;; Don't run gofmt on Ragel files.
+       (unless (string-match "\\.rl$" (buffer-name))
+         (gofmt-before-save)))
+     (add-hook 'go-mode-hook 'jart--go-mode-hook)
+     (add-hook 'before-save-hook 'jart--gofmt-before-save)))
 
 (eval-after-load 'asm-mode
   '(progn
@@ -714,5 +720,61 @@ Thanks: Stefan Monnier <foo@acm.org>"
        (interactive)
        (font-lock-fontify-buffer))
      (add-hook 'auto-revert-mode-hook 'jart-auto-revert-mode-hook)))
+
+(require 'mmm-mode)
+(mmm-add-group
+ 'ragel
+ '((ragel-block
+    :submode ragel-mode
+    :front "%%{"
+    :back "}%%"
+    :include-front t
+    :include-back t
+    :insert ((?{ ragel-block nil @ "%%{" @ "\n" _ "\n" @ "}%%" @)))
+   (ragel-line
+    :submode ragel-mode
+    :front "%% "
+    :back "\n"
+    :include-front t
+    :insert ((?\  ragel-block nil @ "%% " @ "" _ "" @ "\n" @)))))
+(mmm-add-mode-ext-class 'go-mode nil 'ragel)
+
+(define-generic-mode 'ragel-mode
+  '(?#) ;; Comments
+  '(
+    ;; Keywords
+    "machine" "action" "access" "context" "include" "import" "export"
+    "prepush" "postpop" "when" "inwhen" "outwhen" "err" "lerr" "eof" "from"
+    "to" "alphtype" "getkey" "write"
+    ;; Rules
+    "any" "ascii" "extend" "alpha" "digit" "alnum" "lower" "upper"
+    "xdigit" "cntrl" "graph" "print" "punct" "space" "zlen" "empty"
+    ;; Inline code matching
+    "fpc" "fc" "fcurs" "fbuf" "fblen" "ftargs" "fstack"
+    "fhold" "fgoto" "fcall" "fret" "fentry" "fnext" "fexec" "fbreak"
+    )
+  '(
+    ;; Literals
+    ;;("\\([^\\)]*\\)" . font-lock-constant-face)
+    ;;("\\[[[^\\]]*\\]" . font-lock-constant-face)
+    ("\(\"\\?'\"\'|\\?\"'\|'[^']*'\|\"[^\"]*\"\)" . font-lock-constant-face)
+    ;; Numbers
+    ("\\<[0-9][0-9]*\\>" . font-lock-constant-face)
+    ("\\<0x[0-9a-fA-F][0-9a-fA-F]*\\>" . font-lock-constant-face)
+    ;; Operators
+    ("[>$%@]" . font-lock-constant-face)
+    ("<>\|<" . font-lock-constant-face)
+    ;;("[>\<$%@][!\^/*~]" . font-lock-constant-face)
+    ;;("[>$%]?" . font-lock-constant-face)
+    ;;("<>[!\^/*~]" . font-lock-constant-face)
+    ("=>" . font-lock-constant-face)
+    ("->" . font-lock-constant-face)
+    (":>" . font-lock-constant-face)
+    (":>>" . font-lock-constant-face)
+    ("<:" . font-lock-constant-face)
+    )
+  nil ;'(".rl\\'")
+  nil
+  "Generic mode for mmm-mode editing .rl files.")
 
 ;;; init.el ends here
