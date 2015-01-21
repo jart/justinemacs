@@ -404,7 +404,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (delete-selection-mode 1)
 (show-paren-mode 1)
 (global-git-gutter-mode +1)
-(global-auto-revert-mode)
+(global-auto-revert-mode 1)
 (global-whitespace-mode 1)
 (ac-config-default)
 (yas-global-mode 1)
