@@ -184,6 +184,12 @@ Thanks: Stefan Monnier <foo@acm.org>"
     (forward-line))
   (search-forward-regexp "^$" nil t))
 
+(defun jart-require-packages (packages)
+  (dolist (package packages)
+    (when (not (package-installed-p package))
+      (package-install package))))
+
+(global-set-key (kbd "C--") 'undo)
 (global-set-key (kbd "C-t") 'jart-yas-expand)
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
 (global-set-key (kbd "M-Q") 'jart-unfill-paragraph)
@@ -246,16 +252,16 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (global-set-key (kbd "C-+") 'text-scale-increase)
   (global-set-key (kbd "C-_") 'text-scale-decrease))
 
-(when (string-match "^jart\\|ows$" (getenv "USER"))
-  (keyboard-translate ?\C-u ?\C-x)
-  (keyboard-translate ?\C-x ?\C-u)
-  (global-set-key (kbd "C-h") 'delete-backward-char)
-  (global-set-key (kbd "M-h") 'backward-kill-word)
-  (global-set-key (kbd "C-x C-h") 'help)
-  (global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
-  (global-set-key (kbd "C-x C-g") 'grep-find)
-  (global-set-key (kbd "C-x b") 'ibuffer)
-  (global-unset-key (kbd "C-/")))
+;; Justine's special key-bindings you probably don't want.
+(keyboard-translate ?\C-u ?\C-x)
+(keyboard-translate ?\C-x ?\C-u)
+(global-set-key (kbd "C-h") 'delete-backward-char)
+(global-set-key (kbd "M-h") 'backward-kill-word)
+(global-set-key (kbd "C-x C-h") 'help)
+(global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
+(global-set-key (kbd "C-x C-g") 'grep-find)
+(global-set-key (kbd "C-x b") 'ibuffer)
+(global-unset-key (kbd "C-/"))
 
 ;; Load font and theme quickly and reliably.
 (condition-case exc
@@ -278,11 +284,30 @@ Thanks: Stefan Monnier <foo@acm.org>"
    (warn (format "Caught exception: [%s]" exc))))
 
 ;; Initialise Melpa package manager.
-(require 'cl)
 (require 'package)
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (package-initialize)
+
+;; Make sure important packages are installed.
+(jart-require-packages
+ '(auto-complete
+   coffee-mode
+   flycheck
+   flycheck-perl6
+   git-gutter
+   go-mode
+   js2-closure
+   js2-mode
+   magit
+   markdown-mode
+   mmm-mode
+   pager
+   pager-default-keybindings
+   paredit
+   web-mode
+   yaml-mode
+   yasnippet))
 
 ;; Custom settings.
 (custom-set-variables
@@ -325,6 +350,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(ido-use-filename-at-point 'guess)
  '(indent-tabs-mode nil)
  '(inhibit-startup-message t)
+ ;; scp bean:'/usr/lib/aspell/jart.{alias,rws}' /tmp
+ ;; sudo mv /tmp/jart.{alias,rws} /usr/lib/aspell
  '(ispell-extra-args '("--encoding=utf-8" "--master=jart"))
  '(ispell-silently-savep t)
  '(jart-is-colorful (>= (display-color-cells) 256))
@@ -517,7 +544,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
                "\\)\\)\\s-*")
        "Matches empty jsdoc tags.")
      (define-key js2-mode-map (kbd "M-/") 'auto-complete)
-     (add-hook 'before-save-hook 'js2-closure-save-hook)
+     (remove-hook 'before-save-hook 'js2-closure-save-hook)
      (jart-js2-fix-paragraph-skipping)))
 
 (eval-after-load 'markdown-mode
