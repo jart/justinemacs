@@ -6,7 +6,7 @@
 
 :name:        justinemacs
 :description: My Emacs Configuration
-:copyright:   © 2003-2014 Justine Alexandra Roberts Tunney
+:copyright:   © 2003-2016 Justine Alexandra Roberts Tunney
 :license:     Licensed MIT
 
 
