@@ -290,24 +290,24 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (package-initialize)
 
 ;; Make sure important packages are installed.
-(jart-require-packages
- '(auto-complete
-   coffee-mode
-   flycheck
-   flycheck-perl6
-   git-gutter
-   go-mode
-   js2-closure
-   js2-mode
-   magit
-   markdown-mode
-   mmm-mode
-   pager
-   pager-default-keybindings
-   paredit
-   web-mode
-   yaml-mode
-   yasnippet))
+;; (jart-require-packages
+;;  '(auto-complete
+;;    coffee-mode
+;;    flycheck
+;;    flycheck-perl6
+;;    git-gutter
+;;    go-mode
+;;    js2-closure
+;;    js2-mode
+;;    magit
+;;    markdown-mode
+;;    mmm-mode
+;;    pager
+;;    pager-default-keybindings
+;;    paredit
+;;    web-mode
+;;    yaml-mode
+;;    yasnippet))
 
 ;; Custom settings.
 (custom-set-variables
@@ -318,7 +318,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(ac-js2-evaluate-calls nil)
  '(ac-trigger-key "C-i")
  '(ac-use-fuzzy nil)
- '(auto-revert-interval 2)
  '(c-basic-offset 2)
  '(c-file-style nil)
  '(coffee-tab-width 2)
@@ -431,13 +430,13 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (auto-compression-mode t)
 (delete-selection-mode 1)
 (show-paren-mode 1)
-(global-git-gutter-mode +1)
-(global-auto-revert-mode 1)
-(global-whitespace-mode 1)
-(ac-config-default)
-(yas-global-mode 1)
-(add-hook 'after-init-hook #'global-flycheck-mode)
-(add-hook 'text-mode-hook 'flyspell-mode)
+;; (global-git-gutter-mode +1)
+;; (global-auto-revert-mode 1)
+;; (global-whitespace-mode 1)
+;; (ac-config-default)
+;; (yas-global-mode 1)
+;; (add-hook 'after-init-hook #'global-flycheck-mode)
+;; (add-hook 'text-mode-hook 'flyspell-mode)
 
 ;; Load some libraries.
 (require 'saveplace)
@@ -454,7 +453,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
 (add-to-list 'auto-mode-alist '("\\.\\(html\\|xml\\|soy\\|css\\)$" . web-mode))
-(add-to-list 'auto-mode-alist '("\\.rl$" . mmm-mode))
+;; (add-to-list 'auto-mode-alist '("\\.rl$" . mmm-mode))
 
 ;; Performance Improvement: This is another not so great feature that makes
 ;; emacs slower by doing a zillion stat() calls every time I open a file.
@@ -462,6 +461,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (defun dir-locals-find-file (file)
   "Override default function to do nothing with FILE."
   nil)
+
+;; (require 'cl)
 
 ;; Make return auto-indent and work inside comments.
 (let ((modes '((cc-mode     java-mode-map        'c-indent-new-comment-line)
@@ -474,8 +475,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (while modes
     (eval-after-load (caar modes)
       `(progn
-         (define-key ,(cadar modes) (kbd "<return>") ,(caddar modes))
-         (define-key ,(cadar modes) (kbd "RET") ,(caddar modes))))
+         (define-key ,(car (cdar modes)) (kbd "<return>") ,(cadr (cdar modes)))
+         (define-key ,(car (cdar modes)) (kbd "RET") ,(cadr (cdar modes)))))
     (setq modes (cdr modes))))
 
 (add-to-list 'completion-ignored-extensions ".test")
@@ -748,60 +749,60 @@ Thanks: Stefan Monnier <foo@acm.org>"
        (font-lock-fontify-buffer))
      (add-hook 'auto-revert-mode-hook 'jart-auto-revert-mode-hook)))
 
-(require 'mmm-mode)
-(mmm-add-group
- 'ragel
- '((ragel-block
-    :submode ragel-mode
-    :front "%%{"
-    :back "}%%"
-    :include-front t
-    :include-back t
-    :insert ((?{ ragel-block nil @ "%%{" @ "\n" _ "\n" @ "}%%" @)))
-   (ragel-line
-    :submode ragel-mode
-    :front "%% "
-    :back "\n"
-    :include-front t
-    :insert ((?\  ragel-block nil @ "%% " @ "" _ "" @ "\n" @)))))
-(mmm-add-mode-ext-class 'go-mode nil 'ragel)
+;; (require 'mmm-mode)
+;; (mmm-add-group
+;;  'ragel
+;;  '((ragel-block
+;;     :submode ragel-mode
+;;     :front "%%{"
+;;     :back "}%%"
+;;     :include-front t
+;;     :include-back t
+;;     :insert ((?{ ragel-block nil @ "%%{" @ "\n" _ "\n" @ "}%%" @)))
+;;    (ragel-line
+;;     :submode ragel-mode
+;;     :front "%% "
+;;     :back "\n"
+;;     :include-front t
+;;     :insert ((?\  ragel-block nil @ "%% " @ "" _ "" @ "\n" @)))))
+;; (mmm-add-mode-ext-class 'go-mode nil 'ragel)
 
-(define-generic-mode 'ragel-mode
-  '(?#) ;; Comments
-  '(
-    ;; Keywords
-    "machine" "action" "access" "context" "include" "import" "export"
-    "prepush" "postpop" "when" "inwhen" "outwhen" "err" "lerr" "eof" "from"
-    "to" "alphtype" "getkey" "write"
-    ;; Rules
-    "any" "ascii" "extend" "alpha" "digit" "alnum" "lower" "upper"
-    "xdigit" "cntrl" "graph" "print" "punct" "space" "zlen" "empty"
-    ;; Inline code matching
-    "fpc" "fc" "fcurs" "fbuf" "fblen" "ftargs" "fstack"
-    "fhold" "fgoto" "fcall" "fret" "fentry" "fnext" "fexec" "fbreak"
-    )
-  '(
-    ;; Literals
-    ;;("\\([^\\)]*\\)" . font-lock-constant-face)
-    ;;("\\[[[^\\]]*\\]" . font-lock-constant-face)
-    ("\(\"\\?'\"\'|\\?\"'\|'[^']*'\|\"[^\"]*\"\)" . font-lock-constant-face)
-    ;; Numbers
-    ("\\<[0-9][0-9]*\\>" . font-lock-constant-face)
-    ("\\<0x[0-9a-fA-F][0-9a-fA-F]*\\>" . font-lock-constant-face)
-    ;; Operators
-    ("[>$%@]" . font-lock-constant-face)
-    ("<>\|<" . font-lock-constant-face)
-    ;;("[>\<$%@][!\^/*~]" . font-lock-constant-face)
-    ;;("[>$%]?" . font-lock-constant-face)
-    ;;("<>[!\^/*~]" . font-lock-constant-face)
-    ("=>" . font-lock-constant-face)
-    ("->" . font-lock-constant-face)
-    (":>" . font-lock-constant-face)
-    (":>>" . font-lock-constant-face)
-    ("<:" . font-lock-constant-face)
-    )
-  nil ;'(".rl\\'")
-  nil
-  "Generic mode for mmm-mode editing .rl files.")
+;; (define-generic-mode 'ragel-mode
+;;   '(?#) ;; Comments
+;;   '(
+;;     ;; Keywords
+;;     "machine" "action" "access" "context" "include" "import" "export"
+;;     "prepush" "postpop" "when" "inwhen" "outwhen" "err" "lerr" "eof" "from"
+;;     "to" "alphtype" "getkey" "write"
+;;     ;; Rules
+;;     "any" "ascii" "extend" "alpha" "digit" "alnum" "lower" "upper"
+;;     "xdigit" "cntrl" "graph" "print" "punct" "space" "zlen" "empty"
+;;     ;; Inline code matching
+;;     "fpc" "fc" "fcurs" "fbuf" "fblen" "ftargs" "fstack"
+;;     "fhold" "fgoto" "fcall" "fret" "fentry" "fnext" "fexec" "fbreak"
+;;     )
+;;   '(
+;;     ;; Literals
+;;     ;;("\\([^\\)]*\\)" . font-lock-constant-face)
+;;     ;;("\\[[[^\\]]*\\]" . font-lock-constant-face)
+;;     ("\(\"\\?'\"\'|\\?\"'\|'[^']*'\|\"[^\"]*\"\)" . font-lock-constant-face)
+;;     ;; Numbers
+;;     ("\\<[0-9][0-9]*\\>" . font-lock-constant-face)
+;;     ("\\<0x[0-9a-fA-F][0-9a-fA-F]*\\>" . font-lock-constant-face)
+;;     ;; Operators
+;;     ("[>$%@]" . font-lock-constant-face)
+;;     ("<>\|<" . font-lock-constant-face)
+;;     ;;("[>\<$%@][!\^/*~]" . font-lock-constant-face)
+;;     ;;("[>$%]?" . font-lock-constant-face)
+;;     ;;("<>[!\^/*~]" . font-lock-constant-face)
+;;     ("=>" . font-lock-constant-face)
+;;     ("->" . font-lock-constant-face)
+;;     (":>" . font-lock-constant-face)
+;;     (":>>" . font-lock-constant-face)
+;;     ("<:" . font-lock-constant-face)
+;;     )
+;;   nil ;'(".rl\\'")
+;;   nil
+;;   "Generic mode for mmm-mode editing .rl files.")
 
 ;;; init.el ends here
