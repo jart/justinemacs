@@ -461,15 +461,16 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (package-initialize)
-(package-refresh-contents)
-(jart-require-packages
- '(pager
-   pager-default-keybindings
-   paredit
-   web-mode
-   markdown-mode
-   magit
-   js2-mode))
+(when (not (package-installed-p 'pager))
+  (package-refresh-contents)
+  (jart-require-packages
+   '(pager
+     pager-default-keybindings
+     paredit
+     web-mode
+     markdown-mode
+     magit
+     js2-mode)))
 
 (setq magit-last-seen-setup-instructions "1.4.0")
 
