@@ -119,6 +119,179 @@ Thanks: Stefan Monnier <foo@acm.org>"
     ('error
      (transpose-chars nil))))
 
+(defmacro jart-normal-paragraphs (body)
+  "Set paragraph delimiters back to normal for duration of BODY."
+  `(let ((paragraph-start "^L\\|[ \t]*$")
+         (paragraph-separate "[ \t^L]*$")
+         (c-paragraph-start "^L\\|[ \t]*$"))
+     ,body))
+
+(defun jart-sort-paragraph ()
+  "Sort lines within paragraph under cursor."
+  (interactive)
+  (jart-normal-paragraphs
+   (let ((start (point))
+         (beg (progn (backward-paragraph) (point)))
+         (end (progn (forward-paragraph) (point))))
+     (sort-lines nil beg end)
+     (goto-char start))))
+
+(defun jart-sane-forward-paragraph ()
+  "Move to next blank line."
+  (interactive)
+  (jart-normal-paragraphs
+   (forward-paragraph)))
+
+(defun jart-sane-backward-paragraph ()
+  "Move to previous blank line."
+  (interactive)
+  (jart-normal-paragraphs
+   (backward-paragraph)))
+
+(defun jart-sane-} ()
+  "Insert } with correct indentation."
+  (interactive)
+  (insert "}")
+  (indent-for-tab-command))
+
+(defun jart--get-url-under-cursor ()
+  "Return URL under cursor."
+  (save-excursion
+    (search-backward-regexp "http" (point-at-bol))
+    (let ((begin (point)))
+      (search-forward-regexp "[^-0-9A-Za-z~._,/?#@!$&'()*+=;:]"
+                             (point-at-eol))
+      (buffer-substring-no-properties begin (- (point) 1)))))
+
+(defun jart-open-url (&optional url)
+  "Open URL under cursor."
+  (interactive)
+  (let ((link (or url (jart--get-url-under-cursor))))
+    (when (not (string-match "/\\([^/]+\\)$" link))
+      (error "oh no"))
+    (let ((basename (match-string 1 link)))
+      (shell-command-to-string
+       (format "wget -qO /tmp/%s %s" basename link))
+      (find-file (format "/tmp/%s" basename))
+      (shell-command-to-string
+       (format "rm /tmp/%s" basename)))))
+
+(defun jart-mirror-url (&optional url)
+  "Mirror URL under cursor."
+  (interactive)
+  (let ((link (or url (jart--get-url-under-cursor))))
+    (message (format "%s" (async-shell-command
+                           (format "bzmirror %s" link))))))
+
+(defun jart-mirror-check ()
+  "Check mirror URLs in current buffer."
+  (interactive)
+  (save-buffer)
+  (async-shell-command
+   (format "check-mirror-urls %s" (buffer-file-name))))
+
+(defun jart-copy-checksum-url (&optional url)
+  "Download URL and put its sha256 on the kill ring."
+  (interactive)
+  (let* ((link (or url (jart--get-url-under-cursor)))
+         (sha256 (format "%s" (shell-command-to-string
+                               (format "summy %s" link)))))
+    (jart--replace-nearest-sha256 sha256)
+    (kill-new sha256)
+    (message sha256)))
+
+(defun jart--replace-nearest-sha256 (sha256)
+  (interactive)
+  (let ((current (line-number-at-pos))
+        (forward (save-excursion
+                   (when (jart--search-sha256)
+                     (line-number-at-pos))))
+        (backward (save-excursion
+                    (when (jart--search-sha256 t)
+                      (line-number-at-pos)))))
+    (when (or forward backward)
+      (save-excursion
+        (jart--search-sha256
+         (if (and forward backward)
+             (<= (- current backward)
+                 (- forward current))
+           backward))
+        (kill-word nil)
+        (insert sha256)))))
+
+(defun jart--search-sha256 (&optional backwards)
+  (when (eval (cons (if backwards
+                        'search-backward-regexp
+                      'search-forward-regexp)
+                    '("\"[0-9a-f]\\{64\\}\"" nil t)))
+    (if backwards
+        (forward-char)
+      (backward-word))
+    (point)))
+
+(defun jart-python-fill-paragraph ()
+  (interactive)
+  (end-of-line)
+  (if (jart--is-in-python-docstring-section-paragraph)
+      (fill-region (save-excursion
+                     (search-backward-regexp "^ +[a-zA-Z0-9_]+:" nil t)
+                     (when (looking-at " +\\(Returns\\|Yields\\):")
+                       (forward-line))
+                     (search-forward-regexp "[a-zA-Z0-9_]" nil t)
+                     (- (point) 1))
+                   (save-excursion
+                     (search-forward-regexp
+                      "^ +[a-zA-Z0-9_]+:\\|^ +\"\"\"" nil t)
+                     (beginning-of-line)
+                     (goto-char (- (point) 1))
+                     (point)))
+    (fill-paragraph)))
+
+(defun jart--is-in-python-docstring-section-paragraph ()
+  (when (eq (face-at-point) 'font-lock-doc-face)
+    (let* ((docstring-point
+            (save-excursion
+              (when (search-backward-regexp "\"\"\"" nil t)
+                (point))))
+           (docstring-offset
+            (save-excursion
+              (when docstring-point
+                (goto-char docstring-point)
+                (beginning-of-line)
+                (- docstring-point (point)))))
+           (paragraph-offset
+            (save-excursion
+              (end-of-line)
+              (when (and docstring-point
+                         (search-backward-regexp "^ +[a-zA-Z0-9_]+:" nil t)
+                         (> (progn
+                              (when (looking-at " +\\(Returns\\|Yields\\):")
+                                (forward-line))
+                              (search-forward-regexp "[a-zA-Z0-9_]" nil t)
+                              (goto-char (- (point) 1))
+                              (point))
+                            docstring-point))
+                (- (point) (progn (beginning-of-line) (point)))))))
+      (and paragraph-offset
+           docstring-offset
+           (> paragraph-offset docstring-offset)))))
+
+(defun jart-show-long-lines ()
+  "Customize behavior of long line highlighting."
+  (let ((column (cdr (assoc major-mode '((java-mode . 100)
+                                         (web-mode . 100)
+                                         (js2-mode . 80)
+                                         (c-mode . 80)
+                                         (c++-mode . 80)
+                                         (python-mode . 80)
+                                         (markdown-mode . 80)
+                                         (text-mode . 80)
+                                         (emacs-lisp-mode . 80)
+                                         (rst-mode . 80))))))
+    (when column
+      (column-marker-1 column))))
+(add-hook 'after-change-major-mode-hook 'jart-show-long-lines)
+
 (defun jart-js2-fix-paragraph-skipping ()
   "Fix a bug with `js2-mode' that maintainers can't fix."
   (defvar js2--fill-mode nil)
@@ -309,6 +482,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
 ;;    yaml-mode
 ;;    yasnippet))
 
+(setq magit-last-seen-setup-instructions "1.4.0")
+
 ;; Custom settings.
 (custom-set-variables
  '(ac-auto-show-menu 0.01)
@@ -320,6 +495,9 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(ac-use-fuzzy nil)
  '(c-basic-offset 2)
  '(c-file-style nil)
+ '(c-font-lock-extra-types
+   (quote
+    ("\\sw+_t" "bool" "complex" "imaginary" "FILE" "lconv" "tm" "va_list" "jmp_buf" "Lisp_Object" "u?int[136]?[862]" "complex64" "complex128")))
  '(coffee-tab-width 2)
  '(color-theme-is-global t)
  '(column-number-mode t)
@@ -351,7 +529,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(inhibit-startup-message t)
  ;; scp bean:'/usr/lib/aspell/jart.{alias,rws}' /tmp
  ;; sudo mv /tmp/jart.{alias,rws} /usr/lib/aspell
- '(ispell-extra-args '("--encoding=utf-8" "--master=jart"))
+ '(ispell-extra-args '("--encoding=utf-8" "--master=en"))
  '(ispell-silently-savep t)
  '(jart-is-colorful (>= (display-color-cells) 256))
  '(jart-is-linux (not (null (memq system-type '(gnu/linux)))))
@@ -359,6 +537,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(jart-is-unix (not (null (memq system-type '(gnu/linux darwin berkeley-unix cygwin)))))
  '(jart-is-windows (not (null (memq system-type '(ms-dos windows-nt cygwin)))))
  '(js2-basic-offset 2)
+ '(js2-closure-whitelist (quote ("goog.testing.asserts" "goog.testing.jsunit")))
  '(js2-bounce-indent-p nil)
  '(js2-enter-indents-newline t)
  '(js2-global-externs
@@ -373,6 +552,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
      "assertHashEquals" "assertRoughlyEquals" "assertContains"
      "assertNotContains" "assertRegExp"))
  '(js2-indent-switch-body t)
+ '(js2-strict-trailing-comma-warning nil)
+ '(magit-last-seen-setup-instructions "1.4.0")
  '(magit-stage-all-confirm nil)
  '(magit-unstage-all-confirm nil)
  '(make-backup-files nil)
@@ -384,6 +565,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(save-place t)
  '(save-place-file (concat user-emacs-directory "places"))
  '(sh-basic-offset 2)
+ '(sentence-end-double-space nil)
+ '(sh-basic-offset 2)
  '(sh-indentation 2)
  '(shift-select-mode nil)
  '(tab-width 2)
@@ -393,6 +576,9 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(uniquify-buffer-name-style 'forward)
  '(vc-handled-backends nil)
  '(visible-bell nil)
+ '(web-mode-css-indent-offset 2)   
+ '(web-mode-markup-indent-offset 2)
+ '(web-mode-code-indent-offset 2)
  '(web-mode-engines-alist '(("liquid" . "\\.\\(html\\|xml\\)\\'")
                             ("angular" . "\\.ng\\'")))
  '(web-mode-tag-auto-close-style 1)
@@ -451,9 +637,22 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.gss$" . css-mode))
+(add-to-list 'auto-mode-alist '("\\.bzl$" . python-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(html\\|xml\\|soy\\|css\\|ng\\)$" . web-mode))
+(add-to-list 'auto-mode-alist '("BAZEL$" . python-mode))
+(add-to-list 'auto-mode-alist '("BUILD$" . python-mode))
+(add-to-list 'auto-mode-alist '("BUILD\\.OPENSOURCE$" . python-mode))
+(add-to-list 'auto-mode-alist '("WORKSPACE$" . python-mode))
+(setq web-mode-engines-alist '(("angular" . "\\.\\(html\\|xml\\)\\'")
+                               ("angular" . "\\.ng\\'")))
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
-(add-to-list 'auto-mode-alist '("\\.\\(html\\|xml\\|soy\\|css\\)$" . web-mode))
 ;; (add-to-list 'auto-mode-alist '("\\.rl$" . mmm-mode))
+
+(eval-after-load 'markdown-mode
+  '(progn
+     (define-key markdown-mode-map (kbd "M-{") 'jart-sane-backward-paragraph)
+     (define-key markdown-mode-map (kbd "M-}") 'jart-sane-forward-paragraph)))
 
 ;; Performance Improvement: This is another not so great feature that makes
 ;; emacs slower by doing a zillion stat() calls every time I open a file.
@@ -638,7 +837,9 @@ Thanks: Stefan Monnier <foo@acm.org>"
        (define-key c-mode-base-map (kbd "C-c C-o") 'ff-find-other-file)
        (define-key c-mode-base-map (kbd "C-c C-h") 'includeme)
        (define-key c-mode-base-map (kbd "C-<return>") 'c-indent-new-comment-line)
-       (define-key c-mode-base-map (kbd "C-M-h") 'backward-kill-word))
+       (define-key c-mode-base-map (kbd "C-M-h") 'backward-kill-word)
+       (define-key c-mode-base-map (kbd "M-{") 'jart-sane-backward-paragraph)
+       (define-key c-mode-base-map (kbd "M-}") 'jart-sane-forward-paragraph))
      (defun jart-c++-mode-hook ()
        (font-lock-add-keywords
         nil
