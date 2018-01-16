@@ -461,26 +461,15 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
 (package-initialize)
-
-;; Make sure important packages are installed.
-;; (jart-require-packages
-;;  '(auto-complete
-;;    coffee-mode
-;;    flycheck
-;;    flycheck-perl6
-;;    git-gutter
-;;    go-mode
-;;    js2-closure
-;;    js2-mode
-;;    magit
-;;    markdown-mode
-;;    mmm-mode
-;;    pager
-;;    pager-default-keybindings
-;;    paredit
-;;    web-mode
-;;    yaml-mode
-;;    yasnippet))
+(package-refresh-contents)
+(jart-require-packages
+ '(pager
+   pager-default-keybindings
+   paredit
+   web-mode
+   markdown-mode
+   magit
+   js2-mode))
 
 (setq magit-last-seen-setup-instructions "1.4.0")
 
