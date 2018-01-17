@@ -6,7 +6,7 @@ wget https://ftp.gnu.org/gnu/emacs/emacs-25.3.tar.gz
 tar -xf emacs-25.3.tar.gz
 pushd emacs-25.3
 CFLAGS='-O3 -march=native' ./configure --prefix=/usr --disable-silent-rules --with-x-toolkit=no --with-xpm=no --with-tiff=no --with-x=no
-make -j96
+make -j16
 sudo make install
 popd
 git clone https://github.com/jart/justinemacs.git .emacs.d
