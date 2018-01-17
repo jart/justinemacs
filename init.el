@@ -1,6 +1,6 @@
 ;;; init.el --- justinemacs (Justine Tunney's .emacs File)
 
-;; Copyright (C) 2003-2014 Justine Alexandra Roberts Tunney
+;; Copyright (C) 2003-2018 Justine Alexandra Roberts Tunney
 ;; License: MIT
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;; Version: 0.1
@@ -393,6 +393,11 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "C-M-r") 'isearch-backward)
 (global-set-key (kbd "C-c y") 'bury-buffer)
 (global-set-key (kbd "C-c r") 'revert-buffer)
+(global-set-key (kbd "C-c C-o") 'jart-open-url)
+(global-set-key (kbd "C-c m") 'jart-mirror-url)
+(global-set-key (kbd "C-c s") 'jart-copy-checksum-url)
+(global-set-key (kbd "C-c C-y") 'magit-blame-mode)
+(global-set-key (kbd "C-c S") 'jart-sort-paragraph)
 (global-set-key (kbd "C-x C-r") 'replace-string)
 (global-set-key (kbd "C-x C-l") 'replace-regexp)
 (global-set-key (kbd "C-x C-r") 'replace-string)
