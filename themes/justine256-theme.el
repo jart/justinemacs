@@ -1,10 +1,10 @@
 ;;; justine256-theme.el --- A theme designed for black xterm-256color.
 
-;; Copyright (C) 2013 Justine Tunney
+;; Copyright (C) 2013-2018 Justine Tunney
 
 ;; Author: Justine Tunney <jtunney@gmail.com>
 ;; URL: http://github.com/jart/justinemacs
-;; Version: 0.1
+;; Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary
+;;; Commentary:
 
-;; This theme is based off tango-dark-theme.el which comes with emacs. The
+;; This theme is based off tango-dark-theme.el which comes with Emacs.  The
 ;; colors in this theme come from the Tango palette, which is in the public
 ;; domain: http://tango.freedesktop.org/
 
@@ -50,6 +50,7 @@ Semantic, and Ansi-Color faces are included.")
 
   (custom-theme-set-faces
    'justine256
+
    ;; Ensure sufficient contrast on low-color terminals.
    `(default ((((class color) (min-colors 4096))
                (:foreground ,alum-1 :background ,alum-6))
@@ -60,8 +61,10 @@ Semantic, and Ansi-Color faces are included.")
               (,class
                (:foreground ,alum-1 :background "black"))))
    `(cursor ((,class (:background ,butter-1))))
+
    ;; Highlighting faces
    `(fringe ((,class (:background ,alum-7))))
+   `(shadow ((,class (:foreground ,alum-2))))
    `(match ((,class (:foreground ,alum-6 :background ,butter-2))))
    `(highlight ((,class (:foreground ,alum-6 :background ,butter-2))))
    `(hi-yellow ((,class (:background ,plum-1))))
@@ -70,6 +73,7 @@ Semantic, and Ansi-Color faces are included.")
    `(isearch ((,class (:foreground ,alum-1 :background ,orange-3))))
    `(lazy-highlight ((,class (:background ,choc-3))))
    `(trailing-whitespace ((,class (:background ,red-3))))
+
    ;; Mode line faces
    `(mode-line ((,class
                  (:box (:line-width -1 :style released-button)
@@ -78,12 +82,14 @@ Semantic, and Ansi-Color faces are included.")
    `(mode-line-inactive ((,class
                           (:box (:line-width -1 :style released-button)
                                 :background ,alum-5 :foreground "gray70"))))
+
    ;; Escape and prompt faces
    `(minibuffer-prompt ((,class (:foreground ,cham-0))))
    `(escape-glyph ((,class (:foreground ,butter-3))))
    `(error ((,class (:foreground ,red-0))))
-   `(warning ((,class (:foreground ,orange-1))))
+   `(warning ((,class (:foreground ,red-3))))
    `(success ((,class (:foreground ,cham-1))))
+
    ;; Font lock faces
    `(font-lock-builtin-face ((,class (:foreground ,plum-1))))
    `(font-lock-comment-face ((,class (:foreground ,cham-2))))
@@ -93,9 +99,11 @@ Semantic, and Ansi-Color faces are included.")
    `(font-lock-string-face ((,class (:foreground "#d7af87"))))
    `(font-lock-type-face ((,class (:foreground ,blue-0))))
    `(font-lock-variable-name-face ((,class (:foreground ,orange-1))))
+
    ;; Button and link faces
    `(link ((,class (:underline t :foreground ,blue-1))))
    `(link-visited ((,class (:underline t :foreground ,blue-2))))
+
    ;; Gnus faces
    `(gnus-group-news-1 ((,class (:foreground ,plum-1))))
    `(gnus-group-news-1-low ((,class (:foreground ,plum-2))))
@@ -120,6 +128,7 @@ Semantic, and Ansi-Color faces are included.")
    `(gnus-header-subject ((,class (:foreground ,cham-1))))
    `(gnus-header-name ((,class (:foreground ,blue-1))))
    `(gnus-header-newsgroups ((,class (:foreground ,choc-2))))
+
    ;; Message faces
    `(message-header-name ((,class (:foreground ,blue-1))))
    `(message-header-cc ((,class (:foreground ,butter-3))))
@@ -128,8 +137,13 @@ Semantic, and Ansi-Color faces are included.")
    `(message-header-to ((,class (:foreground ,butter-2))))
    `(message-cited-text ((,class (:foreground ,cham-1))))
    `(message-separator ((,class (:foreground ,plum-1))))
+
    ;; SMerge faces
    `(smerge-refined-change ((,class (:background ,blue-3))))
+   `(smerge-mine ((,class (:background "#eecccc" :foreground "#aa2222"))))
+   `(smerge-markers ((,class (:background "grey80" :foreground "grey30"))))
+   `(smerge-other ((,class (:background "#cceecc" :foreground "#22aa22"))))
+
    ;; Ediff faces
    `(ediff-current-diff-A ((,class (:background ,alum-5))))
    `(ediff-fine-diff-A ((,class (:background ,blue-3))))
@@ -139,34 +153,42 @@ Semantic, and Ansi-Color faces are included.")
    `(ediff-fine-diff-B ((,class (:background ,choc-3))))
    `(ediff-even-diff-B ((,class (:background ,alum-5.5))))
    `(ediff-odd-diff-B ((,class (:background ,alum-5.5))))
+
    ;; Diff faces
-   '(diff-header ((t (:foreground "grey80" :background "grey20"))))
-   '(diff-file-header ((t (:weight bold :background "grey20"))))
-   '(diff-hunk-header ((t (:inherit diff-header))))
-   '(diff-header ((t (:weight bold :background "grey20"))))
-   '(diff-added ((t (:inherit diff-changed :background "dark green"))))
-   '(diff-changed ((t (:background "midnight blue"))))
-   '(diff-indicator-added ((t (:inherit diff-indicator-changed))))
-   '(diff-indicator-changed ((t (:weight bold))))
-   '(diff-indicator-removed ((t (:inherit diff-indicator-changed))))
-   '(diff-removed ((t (:inherit diff-changed :background "dark red"))))
+   `(diff-header ((,class (:foreground ,alum-1 :background "grey20"))))
+   `(diff-file-header ((,class (:weight bold :background "grey20"))))
+   `(diff-hunk-header ((,class (:inherit diff-header))))
+   `(diff-header ((,class (:weight bold :background "grey20"))))
+   `(diff-added ((,class (:inherit diff-changed :background "dark green"))))
+   `(diff-changed ((,class (:background "midnight blue"))))
+   `(diff-indicator-added ((,class (:inherit diff-indicator-changed))))
+   `(diff-indicator-changed ((,class (:weight bold))))
+   `(diff-indicator-removed ((,class (:inherit diff-indicator-changed))))
+   `(diff-removed ((,class (:inherit diff-changed :background "dark red"))))
+   `(diff-context ((,class (:foreground ,alum-4))))
+
    ;; Magit faces
-   '(magit-diff-add ((t (:foreground "color-34"))))
-   '(magit-diff-del ((t (:foreground "color-160"))))
-   '(magit-diff-file-header ((t (:inherit magit-header))))
-   '(magit-diff-hunk-header ((t (:inherit magit-header))))
-   '(magit-header ((t (:weight bold))))
-   '(magit-item-highlight ((t (:background "color-237"))))
-   '(magit-log-head-label ((t (:background "color-34"))))
-   '(magit-log-tag-label ((t (:background "color-172"))))
+   `(magit-header ((,class (:weight bold :foreground ,alum-1))))
+   `(magit-diff-add ((,class (:foreground ,cham-2))))
+   `(magit-diff-del ((,class (:foreground "#FCC"))))
+   `(magit-diff-file-header ((,class (:inherit magit-header))))
+   `(magit-diff-hunk-header ((,class (:inherit magit-header))))
+   `(magit-item-highlight ((,class (:background ,alum-7))))
+   `(magit-log-head-label ((,class (:background "color-34"))))
+   `(magit-log-tag-label ((,class (:background "color-172"))))
+   `(magit-section-highlight ((,class (:background ,alum-7))))
+
    ;; Flyspell faces
    `(flyspell-duplicate ((,class (:foreground ,orange-1))))
    `(flyspell-incorrect ((,class (:foreground ,red-1))))
+
    ;; whitespace-mode
    `(whitespace-space ((t (:foreground "#333" :background nil))))
    `(whitespace-tab ((t (:foreground "#666" :background nil))))
    `(whitespace-newline ((t (:foreground "#333" :background nil))))
-   `(whitespace-line ((t (:background "gray30" :foreground nil))))
+   `(whitespace-line ((t (:background ,alum-5.5 :foreground ,alum-3))))
+   `(column-marker-1 ((t (:background ,alum-5.5 :foreground ,alum-3))))
+
    ;; Semantic faces
    `(semantic-decoration-on-includes ((,class (:underline ,alum-4))))
    `(semantic-decoration-on-private-members-face
@@ -179,25 +201,36 @@ Semantic, and Ansi-Color faces are included.")
      ((,class (:background ,alum-5.5))))
    `(semantic-tag-boundary-face ((,class (:overline ,blue-1))))
    `(semantic-unmatched-syntax-face ((,class (:underline ,red-1))))
+
    ;; web-mode
-   `(web-mode-block-comment-face ((,class (:inherit font-lock-comment-face))))
-   `(web-mode-block-delimiter-face ((,class (:foreground "#5f5f5f"))))
-   `(web-mode-block-face ((,class (:background "#3a3a3a"))))
-   `(web-mode-comment-face ((,class (:inherit font-lock-comment-face))))
-   `(web-mode-function-call-face ((,class (:foreground "#5f87af"))))
-   `(web-mode-html-attr-equal-face ((,class (:inherit web-mode-html-attr-name-face))))
-   `(web-mode-html-attr-name-face ((,class (:foreground "#5f5f87"))))
-   `(web-mode-html-tag-bracket-face ((,class (:foreground "#afafaf"))))
-   `(web-mode-html-tag-face ((,class (:foreground "#af8700"))))
-   `(web-mode-inlay-face ((,class (:background "color-237"))))
-   `(web-mode-keyword-face ((,class (:inherit font-lock-keyword-face))))
-   `(web-mode-variable-name-face ((,class (:foreground "default"))))
+   `(web-mode-block-comment-face ((t (:foreground ,cham-2))))
+   `(web-mode-block-attr-name-face ((t (:foreground ,plum-1))))
+   `(web-mode-block-delimiter-face ((t (:foreground ,alum-4))))
+   `(web-mode-block-face ((t (:background "#3a3a3a"))))
+   `(web-mode-comment-face ((t (:foreground ,cham-2))))
+   `(web-mode-function-call-face ((t (:foreground ,plum-1))))
+   `(web-mode-html-attr-name-face ((t (:foreground ,plum-1))))
+   `(web-mode-html-attr-equal-face ((t (:foreground ,plum-1))))
+   `(web-mode-html-tag-bracket-face ((t (:foreground ,alum-4))))
+   `(web-mode-html-tag-face ((t (:foreground ,orange-1))))
+   `(web-mode-inlay-face ((t (:background "color-237"))))
+   `(web-mode-keyword-face ((t (:foreground ,cham-0))))
+   `(web-mode-symbol-face ((t (:foreground ,plum-1))))
+   `(web-mode-variable-name-face ((t (:foreground ,butter-1))))
+   `(web-mode-block-control-face ((t (:foreground ,choc-1))))
+   `(web-mode-constant-face ((t (:foreground ,blue-1))))
+   `(web-mode-doctype-face ((t (:foreground ,alum-3))))
+
    ;; JavaScript
-   `(js2-warning ((,class (:inherit warning))))
+   `(js2-warning ((,class (:inherit warning :underline nil))))
+   `(js2-error ((,class (:inherit warning :underline nil))))
+   `(js2-external-variable ((,class (:foreground ,red-0))))
+
    ;; FlyCheck
-   `(flycheck-error ((,class (:inherit error))))
+   `(flycheck-error ((,class (:inherit error :underline nil))))
    `(flycheck-info ((,class (:inherit info))))
-   `(flycheck-warning ((,class (:inherit warning))))
+   `(flycheck-warning ((,class (:inherit warning :underline nil))))
+
    ;; Gutter
    `(gutter ((,class (:background ,alum-7 :weight bold))))
    `(git-gutter:added ((,class (:inherit gutter :foreground ,diff-green))))
@@ -205,14 +238,17 @@ Semantic, and Ansi-Color faces are included.")
    `(git-gutter:modified ((,class (:inherit gutter :foreground "magenta"))))
    `(git-gutter:separator ((,class (:inherit gutter :foreground "cyan"))))
    `(git-gutter:unchanged ((,class (:inherit gutter))))
+
+   ;; Customize
+   `(custom-variable-tag ((,class (:foreground "color-63" :weight bold))))
+
    ;; Skewer
    `(skewer-error-face ((,class (:inherit error))))
-   ;; MMM
    `(mmm-default-submode-face ((,class nil))))
   (custom-theme-set-variables
    'justine256
    `(ansi-color-names-vector [,alum-7 ,red-0 ,cham-0 ,butter-1
-                              ,blue-1 ,plum-1 ,blue-0 ,alum-1])))
+                                      ,blue-1 ,plum-1 ,blue-0 ,alum-1])))
 
 (provide-theme 'justine256)
 
@@ -220,4 +256,4 @@ Semantic, and Ansi-Color faces are included.")
 ;; no-byte-compile: t
 ;; End:
 
-;;; justine256-theme.el ends here.
+;;; justine256-theme.el ends here
