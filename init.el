@@ -154,32 +154,29 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (insert "}")
   (indent-for-tab-command))
 
-(defun jart--get-url-under-cursor ()
-  "Return URL under cursor."
-  (save-excursion
-    (search-backward-regexp "http" (point-at-bol))
-    (let ((begin (point)))
-      (search-forward-regexp "[^-0-9A-Za-z~._,/?#@!$&'()*+=;:]"
-                             (point-at-eol))
-      (buffer-substring-no-properties begin (- (point) 1)))))
-
-(defun jart-open-url (&optional url)
+(defun jart-open-url (&optional url) 
   "Open URL under cursor."
   (interactive)
-  (let ((link (or url (jart--get-url-under-cursor))))
+  (let ((link (or url (thing-at-point-url-at-point))))
+    (when (not (jart--url-exists link))
+      (error "does not exist"))
     (when (not (string-match "/\\([^/]+\\)$" link))
       (error "oh no"))
     (let ((basename (match-string 1 link)))
       (shell-command-to-string
        (format "wget -qO /tmp/%s %s" basename link))
-      (find-file (format "/tmp/%s" basename))
-      (shell-command-to-string
-       (format "rm /tmp/%s" basename)))))
+      (find-file (format "/tmp/%s" basename)))))
+
+(defun jart--url-exists (url)
+  "Return nil if URL does not return a 200 OK response."
+  (string-match "^HTTP.*\\b200\\b"
+                (shell-command-to-string
+                 (format "curl -sIL %s" url))))
 
 (defun jart-mirror-url (&optional url)
   "Mirror URL under cursor."
   (interactive)
-  (let ((link (or url (jart--get-url-under-cursor))))
+  (let ((link (or url (thing-at-point-url-at-point))))
     (message (format "%s" (async-shell-command
                            (format "bzmirror %s" link))))))
 
@@ -193,12 +190,88 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (defun jart-copy-checksum-url (&optional url)
   "Download URL and put its sha256 on the kill ring."
   (interactive)
-  (let* ((link (or url (jart--get-url-under-cursor)))
+  (let* ((link (or url (thing-at-point-url-at-point)))
          (sha256 (format "%s" (shell-command-to-string
                                (format "summy %s" link)))))
     (jart--replace-nearest-sha256 sha256)
     (kill-new sha256)
     (message sha256)))
+
+(defun jart-change-version (&optional url)
+  "Show list of git tags associated with URL."
+  (interactive)
+  (let* ((link (or url (thing-at-point-url-at-point)))
+         (old (jart--extract-revision link))
+         (tag (ido-completing-read
+               "Pick a tag: " (jart--git-ls-remote-tags
+                               (jart--as-github-uri link))))
+         (new (if (equal "v" (substring tag 0 1))
+                  (substring tag 1)
+                tag)))
+    (let* ((spot (point))
+           (bounds (if (use-region-p)
+                       (cons (region-beginning) (region-end))
+                     (cons (save-excursion (re-search-backward "^$"))
+                           (save-excursion (re-search-forward "^$")))))
+           (text (buffer-substring-no-properties (car bounds) (cdr bounds))))
+      (delete-region (car bounds) (cdr bounds))
+      (insert (replace-regexp-in-string (regexp-quote old) new text))
+      (goto-char spot)
+      (when (jart--url-exists (thing-at-point-url-at-point))
+        (jart-copy-checksum-url)))))
+
+(defun jart--as-github-uri (text)
+  "Return list of tags associated with git URI."
+  (when (not (string-match "github.com[/:]\\([^/]+\\)/\\([^/.]+\\)[/.]" text))
+    (error "oh no"))
+  (concat "git://github.com/"
+          (match-string 1 text) "/"
+          (match-string 2 text) ".git"))
+
+(defun jart--git-ls-remote-tags (uri)
+  "Return list of tags associated with git URI."
+  (reverse
+   (sort (split-string
+          (shell-command-to-string
+           (concat "git ls-remote --tags " uri
+                   " | grep -Po '(?<=refs/tags/)[^^]+'")))
+         'jart--semver<)))
+
+(defun jart--extract-revision (url)
+  "Return version tag from URL or dies."
+  (when (not (string-match "[0-9]+\\.[0-9]+\\.[0-9]+" url))
+    (error (format "no version found: %s" url)))
+  (match-string 0 url))
+
+(defun jart--semver< (a b &optional op)
+  "Return t if semantic version A is less than B."
+  (condition-case exc
+      (jart--list< (jart--semver-split a)
+                   (jart--semver-split b))
+    ('error
+     (error (format "%s on %s vs. %s aka %S vs. %S"
+                    exc a b (jart--semver-split a)
+                   (jart--semver-split b))))))
+
+(defun jart--semver-split (v)
+  "Split V in a semver fancy way."
+  (mapcar (lambda (x)
+            (if (string-match "^[0-9]+$" x)
+                (string-to-number x)
+              x))
+          (split-string v "[v.-]" t)))
+
+(defun jart--list< (a b)
+  "Return t if A < B as flat lists of strings and numbers."
+  (cond ((null a) (not (null b)))
+        ((null b) nil)
+        ((stringp (car a))
+         (cond ((not (stringp (car b))) t)
+               ((string= (car a) (car b)) (jart--list< (cdr a) (cdr b)))
+               (t (string< (car a) (car b)))))
+        ((stringp (car b)) t)
+        ((= (car a) (car b)) (jart--list< (cdr a) (cdr b)))
+        (t (< (car a) (car b)))))
 
 (defun jart--replace-nearest-sha256 (sha256)
   (interactive)
@@ -396,6 +469,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "C-c C-o") 'jart-open-url)
 (global-set-key (kbd "C-c m") 'jart-mirror-url)
 (global-set-key (kbd "C-c s") 'jart-copy-checksum-url)
+(global-set-key (kbd "C-c v") 'jart-change-version)
 (global-set-key (kbd "C-c C-y") 'magit-blame-mode)
 (global-set-key (kbd "C-c S") 'jart-sort-paragraph)
 (global-set-key (kbd "C-x C-r") 'replace-string)
