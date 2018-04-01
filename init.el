@@ -154,7 +154,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (insert "}")
   (indent-for-tab-command))
 
-(defun jart-open-url (&optional url) 
+(defun jart-open-url (&optional url)
   "Open URL under cursor."
   (interactive)
   (let ((link (or url (thing-at-point-url-at-point))))
@@ -435,6 +435,19 @@ Thanks: Stefan Monnier <foo@acm.org>"
     (when (not (package-installed-p package))
       (package-install package))))
 
+(defun jart-save-word ()
+  "Adds word under cursor to personal dictionary."
+  (interactive)
+  (let* ((bounds (bounds-of-thing-at-point 'word))
+         (word (buffer-substring-no-properties (car bounds)
+                                               (cdr bounds))))
+    (ispell-send-string (concat "*" word "\n"))
+    (add-to-list 'ispell-buffer-session-localwords word)
+    (when (fboundp 'flyspell-unhighlight-at)
+      (flyspell-unhighlight-at (car bounds)))
+    (ispell-pdict-save t t)
+    (flyspell-buffer)))
+
 (global-set-key (kbd "C--") 'undo)
 (global-set-key (kbd "C-t") 'jart-yas-expand)
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
@@ -460,6 +473,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "C-x M-m") 'shell)
 (global-set-key (kbd "C-x C-M-f") 'find-file-in-project)
 (global-set-key (kbd "C-M-h") 'backward-kill-word)
+(global-set-key (kbd "C-c a") 'jart-save-word)
 (global-set-key (kbd "C-c n") 'jart-cleanup-buffer)
 (global-set-key (kbd "C-r") 'isearch-backward-regexp)
 (global-set-key (kbd "C-M-s") 'isearch-forward)
@@ -515,27 +529,43 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "C-x b") 'ibuffer)
 (global-unset-key (kbd "C-/"))
 
-;; Load font and theme quickly and reliably.
+;; Fix cosmetics quickly and reliably.
+(random t)
+(prefer-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(defalias 'yes-or-no-p 'y-or-n-p)
+(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+(if (fboundp 'tooltip-mode) (tooltip-mode -1))
+(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
+(if (fboundp 'x-cut-buffer-or-selection-value)
+    (setq x-select-enable-clipboard t
+          interprogram-paste-function 'x-cut-buffer-or-selection-value))
 (condition-case exc
     (progn
       (add-to-list 'custom-theme-load-path
                    (concat user-emacs-directory "themes"))
       (if window-system
           (progn
-            (let ((myfont "DejaVu Sans Mono-7"))
-              (set-frame-font myfont)
-              (add-to-list 'default-frame-alist (cons 'font myfont)))
+            (mouse-wheel-mode t)
+            (blink-cursor-mode 1)
+            (add-hook 'before-make-frame-hook 'jart-turn-off-tool-bar)
+            (add-to-list 'default-frame-alist '(height . 70))
+            (add-to-list 'default-frame-alist '(width . 120))
+            ;; (let ((myfont "DejaVu Sans Mono-7"))
+            ;;   (set-frame-font myfont)
+            ;;   (add-to-list 'default-frame-alist (cons 'font myfont)))
             (load-theme 'zenburn t))
-        (progn
-          (if (string= (getenv "TERM") "xterm-256color")
-              (load-theme 'justine256 t)
-            (progn
-              (load-theme 'zenburn t)
-              (warn "For prettier colors: TERM=xterm-256color emacs -nw"))))))
+        (if (string= (getenv "TERM") "xterm-256color")
+            (load-theme 'justine256 t)
+          (progn
+            (load-theme 'zenburn t)
+            (warn "For prettier colors: TERM=xterm-256color emacs -nw")))))
   ('error
    (warn (format "Caught exception: [%s]" exc))))
 
-;; Initialise Melpa package manager.
+;; Initialise package manager, which takes time, especially on first run.
 (require 'package)
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
@@ -596,9 +626,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(ido-use-filename-at-point 'guess)
  '(indent-tabs-mode nil)
  '(inhibit-startup-message t)
- ;; scp bean:'/usr/lib/aspell/jart.{alias,rws}' /tmp
- ;; sudo mv /tmp/jart.{alias,rws} /usr/lib/aspell
- '(ispell-extra-args '("--encoding=utf-8" "--master=en"))
+ '(ispell-extra-args '("--encoding=utf-8" "--master=en_US" "--sug-mode=ultra"))
  '(ispell-silently-savep t)
  '(jart-is-colorful (>= (display-color-cells) 256))
  '(jart-is-linux (not (null (memq system-type '(gnu/linux)))))
@@ -606,20 +634,78 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(jart-is-unix (not (null (memq system-type '(gnu/linux darwin berkeley-unix cygwin)))))
  '(jart-is-windows (not (null (memq system-type '(ms-dos windows-nt cygwin)))))
  '(js2-basic-offset 2)
- '(js2-closure-whitelist (quote ("goog.testing.asserts" "goog.testing.jsunit")))
+ '(js2-closure-whitelist
+   '(
+
+     "goog.testing.asserts"
+     "goog.testing.jsunit"
+
+     ))
  '(js2-bounce-indent-p nil)
  '(js2-enter-indents-newline t)
  '(js2-global-externs
-   '("goog" "jart" "occu" "JSON" "console" "gapi" "TestCase" "jstestdriver"
-     "fail" "assert" "assertThrows" "assertNotThrows" "assertTrue" "assertFalse"
-     "assertEquals" "assertNotEquals" "assertNull" "assertNotNull"
-     "assertUndefined" "assertNotUndefined" "assertNotNullNorUndefined"
-     "assertNonEmptyString" "assertNaN" "assertNotNaN" "assertObjectEquals"
-     "assertObjectRoughlyEquals" "assertObjectNotEquals" "assertArrayEquals"
-     "assertElementsEquals" "assertElementsRoughlyEqual" "assertSameElements"
-     "assertEvaluatesToTrue" "assertEvaluatesToFalse" "assertHTMLEquals"
-     "assertHashEquals" "assertRoughlyEquals" "assertContains"
-     "assertNotContains" "assertRegExp"))
+   '(
+
+     ;; Miscellaneous.
+     "$"
+     "Dygraph"
+     "JSON"
+     "TestCase"
+     "angular"
+     "bazel"
+     "console"
+     "exports"
+     "fail"
+     "gapi"
+     "goog"
+     "guestbook"
+     "io"
+     "jart"
+     "jstestdriver"
+     "learning"
+     "occu"
+     "phantom"
+     "proto"
+     "registry"
+     "require"
+     "tb"
+     "tf"
+     "third_party"
+     "vz"
+
+     ;; Closure Library testing functions.
+     "assert"
+     "assertArrayEquals"
+     "assertContains"
+     "assertElementsEquals"
+     "assertElementsRoughlyEqual"
+     "assertEquals"
+     "assertEvaluatesToFalse"
+     "assertEvaluatesToTrue"
+     "assertFalse"
+     "assertHTMLEquals"
+     "assertHashEquals"
+     "assertNaN"
+     "assertNonEmptyString"
+     "assertNotContains"
+     "assertNotEquals"
+     "assertNotNaN"
+     "assertNotNull"
+     "assertNotNullNorUndefined"
+     "assertNotThrows"
+     "assertNotUndefined"
+     "assertNull"
+     "assertObjectEquals"
+     "assertObjectNotEquals"
+     "assertObjectRoughlyEquals"
+     "assertRegExp"
+     "assertRoughlyEquals"
+     "assertSameElements"
+     "assertThrows"
+     "assertTrue"
+     "assertUndefined"
+
+     ))
  '(js2-indent-switch-body t)
  '(js2-strict-trailing-comma-warning nil)
  '(magit-last-seen-setup-instructions "1.4.0")
@@ -642,10 +728,11 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(transient-mark-mode t)
  '(truncate-lines t)
  '(truncate-partial-width-windows nil)
+ '(typescript-indent-level 2)
  '(uniquify-buffer-name-style 'forward)
  '(vc-handled-backends nil)
  '(visible-bell nil)
- '(web-mode-css-indent-offset 2)   
+ '(web-mode-css-indent-offset 2)
  '(web-mode-markup-indent-offset 2)
  '(web-mode-code-indent-offset 2)
  '(web-mode-engines-alist '(("liquid" . "\\.\\(html\\|xml\\)\\'")
@@ -656,22 +743,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(yas-snippet-dirs (list (concat user-emacs-directory "snippets"))))
 
 ;; UI enhancements.
-(random t)
-(prefer-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
-(if (fboundp 'tooltip-mode) (tooltip-mode -1))
-(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-(when window-system
-  (mouse-wheel-mode t)
-  (blink-cursor-mode -1)
-  (add-hook 'before-make-frame-hook 'jart-turn-off-tool-bar))
-(if (fboundp 'x-cut-buffer-or-selection-value)
-    (setq x-select-enable-clipboard t
-          interprogram-paste-function 'x-cut-buffer-or-selection-value))
-(defalias 'yes-or-no-p 'y-or-n-p)
 (delete 'try-expand-line hippie-expand-try-functions-list)
 (delete 'try-expand-list hippie-expand-try-functions-list)
 (add-to-list 'completion-ignored-extensions ".d")  ;; "cc -MD" depends files
@@ -692,6 +763,11 @@ Thanks: Stefan Monnier <foo@acm.org>"
 ;; (yas-global-mode 1)
 ;; (add-hook 'after-init-hook #'global-flycheck-mode)
 ;; (add-hook 'text-mode-hook 'flyspell-mode)
+
+;; Configure Spelling
+(setq ispell-program-name
+      (or (executable-find "aspell")
+          (executable-find "~/homebrew/bin/aspell")))
 
 ;; Load some libraries.
 (require 'saveplace)
@@ -721,7 +797,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (eval-after-load 'markdown-mode
   '(progn
      (define-key markdown-mode-map (kbd "M-{") 'jart-sane-backward-paragraph)
-     (define-key markdown-mode-map (kbd "M-}") 'jart-sane-forward-paragraph)))
+     (define-key markdown-mode-map (kbd "M-}") 'jart-sane-forward-paragraph)
+     (add-hook 'markdown-mode-hook 'flyspell-mode)))
 
 ;; Performance Improvement: This is another not so great feature that makes
 ;; emacs slower by doing a zillion stat() calls every time I open a file.
@@ -765,7 +842,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
        (interactive)
        (when (string= web-mode-engine "closure") ;; soy templates
          (set (make-local-variable 'whitespace-line-column) 100)))
-     (add-hook 'web-mode-hook 'jart-web-mode-hook)))
+     (add-hook 'web-mode-hook 'jart-web-mode-hook)
+     (add-hook 'web-mode-hook 'flyspell-prog-mode)))
 
 (eval-after-load 'js2-mode
   '(progn
@@ -892,7 +970,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
                   (setq new (cons (car old) new)))
                 (setq old (cdr old)))
               new)))
-     (add-hook 'sh-mode-hook 'jart-sh-mode-hook)))
+     (add-hook 'sh-mode-hook 'jart-sh-mode-hook)
+     (add-hook 'sh-mode-hook 'flyspell-prog-mode)))
 
 (eval-after-load 'coffee-mode
   '(progn
@@ -941,7 +1020,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
        'reindent-then-newline-and-indent)
      (define-key lisp-mode-shared-map (kbd "C-\\") 'lisp-complete-symbol)
      (define-key lisp-mode-shared-map (kbd "C-c v") 'eval-buffer)
-     (define-key lisp-mode-shared-map (kbd "M-.") 'find-function)
+     (define-key lisp-mode-shared-map (kbd "M-.") 'find-function-at-point)
      (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode)
      (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
      (add-hook 'emacs-lisp-mode-hook 'jart-remove-elc-on-save)
@@ -1009,7 +1088,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
      (define-key python-mode-map (kbd "M-/") 'hippie-expand)
      (ad-activate 'python-calculate-indentation)
      (add-hook 'python-mode-hook 'jart-pretty-lambdas)
-     (add-hook 'python-mode-hook 'jart-python-mode-hook)))
+     (add-hook 'python-mode-hook 'jart-python-mode-hook)
+     (add-hook 'python-mode-hook 'flyspell-prog-mode)))
 
 (eval-after-load 'autorevert
   '(progn
@@ -1074,5 +1154,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 ;;   nil ;'(".rl\\'")
 ;;   nil
 ;;   "Generic mode for mmm-mode editing .rl files.")
+
+(server-start)
 
 ;;; init.el ends here
