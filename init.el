@@ -126,8 +126,37 @@ Thanks: Stefan Monnier <foo@acm.org>"
          (c-paragraph-start "^L\\|[ \t]*$"))
      ,body))
 
-(defun jart-sort-paragraph ()
-  "Sort lines within paragraph under cursor."
+(defun jart-sort-at-point ()
+  "Sort lines under cursor."
+  (interactive)
+  (or (jart-sort-list-at-point)
+      (jart-sort-block-at-point)))
+
+(defun jart-sort-list-at-point ()
+  "Sort lines within list under cursor."
+  (interactive)
+  (let* ((start (point))
+         (first-line (condition-case nil
+                         (progn
+                           (backward-up-list)
+                           (string-to-number (format-mode-line "%l")))
+                       ('error)))
+         (last-line (when first-line
+                      (forward-sexp)
+                      (string-to-number (format-mode-line "%l")))))
+    (when (and first-line (> (- last-line first-line)))
+      (sort-lines nil
+                  (progn
+                    (goto-line (+ first-line 1))
+                    (point))
+                  (progn
+                    (goto-line (- last-line 1))
+                    (end-of-line)
+                    (point)))
+      (goto-char start))))
+
+(defun jart-sort-block-at-point ()
+  "Sort lines within block under cursor."
   (interactive)
   (jart-normal-paragraphs
    (let ((start (point))
@@ -445,8 +474,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
     (add-to-list 'ispell-buffer-session-localwords word)
     (when (fboundp 'flyspell-unhighlight-at)
       (flyspell-unhighlight-at (car bounds)))
-    (ispell-pdict-save t t)
-    (flyspell-buffer)))
+    (setq ispell-pdict-modified-p '(t))
+    (ispell-pdict-save t t)))
 
 (global-set-key (kbd "C--") 'undo)
 (global-set-key (kbd "C-t") 'jart-yas-expand)
@@ -474,6 +503,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "C-x C-M-f") 'find-file-in-project)
 (global-set-key (kbd "C-M-h") 'backward-kill-word)
 (global-set-key (kbd "C-c a") 'jart-save-word)
+(global-set-key (kbd "C-c f") 'flyspell-buffer)
 (global-set-key (kbd "C-c n") 'jart-cleanup-buffer)
 (global-set-key (kbd "C-r") 'isearch-backward-regexp)
 (global-set-key (kbd "C-M-s") 'isearch-forward)
@@ -485,7 +515,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "C-c s") 'jart-copy-checksum-url)
 (global-set-key (kbd "C-c v") 'jart-change-version)
 (global-set-key (kbd "C-c C-y") 'magit-blame-mode)
-(global-set-key (kbd "C-c S") 'jart-sort-paragraph)
+(global-set-key (kbd "C-c S") 'jart-sort-at-point)
 (global-set-key (kbd "C-x C-r") 'replace-string)
 (global-set-key (kbd "C-x C-l") 'replace-regexp)
 (global-set-key (kbd "C-x C-r") 'replace-string)
@@ -556,12 +586,10 @@ Thanks: Stefan Monnier <foo@acm.org>"
             ;; (let ((myfont "DejaVu Sans Mono-7"))
             ;;   (set-frame-font myfont)
             ;;   (add-to-list 'default-frame-alist (cons 'font myfont)))
-            (load-theme 'zenburn t))
+            (load-theme 'tango-dark t))
         (if (string= (getenv "TERM") "xterm-256color")
             (load-theme 'justine256 t)
-          (progn
-            (load-theme 'zenburn t)
-            (warn "For prettier colors: TERM=xterm-256color emacs -nw")))))
+          (load-theme 'tango-dark t))))
   ('error
    (warn (format "Caught exception: [%s]" exc))))
 
@@ -595,8 +623,23 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(c-basic-offset 2)
  '(c-file-style nil)
  '(c-font-lock-extra-types
-   (quote
-    ("\\sw+_t" "bool" "complex" "imaginary" "FILE" "lconv" "tm" "va_list" "jmp_buf" "Lisp_Object" "u?int[136]?[862]" "complex64" "complex128")))
+   '(
+
+    "FILE"
+    "Lisp_Object"
+    "\\sw+_t"
+    "bool"
+    "complex"
+    "complex128"
+    "complex64"
+    "imaginary"
+    "jmp_buf"
+    "lconv"
+    "tm"
+    "u?int[136]?[862]"
+    "va_list"
+
+    ))
  '(coffee-tab-width 2)
  '(color-theme-is-global t)
  '(column-number-mode t)
@@ -626,7 +669,9 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(ido-use-filename-at-point 'guess)
  '(indent-tabs-mode nil)
  '(inhibit-startup-message t)
- '(ispell-extra-args '("--encoding=utf-8" "--master=en_US" "--sug-mode=ultra"))
+ '(ispell-extra-args '("--encoding=utf-8" "--master=en"
+                       ;;"--sug-mode=ultra"
+                       ))
  '(ispell-silently-savep t)
  '(jart-is-colorful (>= (display-color-cells) 256))
  '(jart-is-linux (not (null (memq system-type '(gnu/linux)))))
@@ -756,18 +801,47 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (auto-compression-mode t)
 (delete-selection-mode 1)
 (show-paren-mode 1)
+(global-whitespace-mode 1)
 ;; (global-git-gutter-mode +1)
 ;; (global-auto-revert-mode 1)
-;; (global-whitespace-mode 1)
 ;; (ac-config-default)
 ;; (yas-global-mode 1)
 ;; (add-hook 'after-init-hook #'global-flycheck-mode)
-;; (add-hook 'text-mode-hook 'flyspell-mode)
 
 ;; Configure Spelling
 (setq ispell-program-name
       (or (executable-find "aspell")
           (executable-find "~/homebrew/bin/aspell")))
+(add-hook 'text-mode-hook 'flyspell-mode)
+(let ((modes '((cc-mode         'c++-mode-hook        'flyspell-prog-mode)
+               (js2-mode        'js2-mode-hook        'flyspell-prog-mode)
+               (lisp-mode       'emacs-lisp-mode-hook 'flyspell-prog-mode)
+               (markdown-mode   'markdown-mode-hook   'flyspell-mode)
+               (python-mode     'python-mode-hook     'flyspell-prog-mode)
+               (sh-script       'sh-mode-hook         'flyspell-prog-mode)
+               (typescript-mode 'typescript-mode-hook 'flyspell-prog-mode)
+               (web-mode        'web-mode-hook        'flyspell-prog-mode))))
+  (while modes
+    (eval-after-load (caar modes)
+      `(progn
+         (add-hook ,(car (cdar modes)) ,(cadr (cdar modes)))
+         (add-hook ,(car (cdar modes)) ,(cadr (cdar modes)))))
+    (setq modes (cdr modes))))
+
+;; Make return auto-indent and work inside comments.
+(let ((modes '((cc-mode     java-mode-map        'c-indent-new-comment-line)
+               (go-mode     go-mode-map          'newline-and-indent)
+               (js2-mode    js2-mode-map         'js2-line-break)
+               (lisp-mode   lisp-mode-shared-map 'reindent-then-newline-and-indent)
+               (python-mode python-mode-map      'newline-and-indent)
+               (sh-script   sh-mode-map          'newline-and-indent)
+               (yaml-mode   yaml-mode-map        'newline-and-indent))))
+  (while modes
+    (eval-after-load (caar modes)
+      `(progn
+         (define-key ,(car (cdar modes)) (kbd "<return>") ,(cadr (cdar modes)))
+         (define-key ,(car (cdar modes)) (kbd "RET") ,(cadr (cdar modes)))))
+    (setq modes (cdr modes))))
 
 ;; Load some libraries.
 (require 'saveplace)
@@ -797,8 +871,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (eval-after-load 'markdown-mode
   '(progn
      (define-key markdown-mode-map (kbd "M-{") 'jart-sane-backward-paragraph)
-     (define-key markdown-mode-map (kbd "M-}") 'jart-sane-forward-paragraph)
-     (add-hook 'markdown-mode-hook 'flyspell-mode)))
+     (define-key markdown-mode-map (kbd "M-}") 'jart-sane-forward-paragraph)))
 
 ;; Performance Improvement: This is another not so great feature that makes
 ;; emacs slower by doing a zillion stat() calls every time I open a file.
@@ -842,8 +915,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
        (interactive)
        (when (string= web-mode-engine "closure") ;; soy templates
          (set (make-local-variable 'whitespace-line-column) 100)))
-     (add-hook 'web-mode-hook 'jart-web-mode-hook)
-     (add-hook 'web-mode-hook 'flyspell-prog-mode)))
+     (add-hook 'web-mode-hook 'jart-web-mode-hook)))
 
 (eval-after-load 'js2-mode
   '(progn
@@ -896,8 +968,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 
 (eval-after-load 'markdown-mode
   '(progn
-     (add-hook 'before-save-hook 'jart-markdown-updated-timestamp)
-     (add-hook 'markdown-mode-hook 'flyspell-mode)))
+     (add-hook 'before-save-hook 'jart-markdown-updated-timestamp)))
 
 (eval-after-load 'go-mode
   '(progn
@@ -970,8 +1041,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
                   (setq new (cons (car old) new)))
                 (setq old (cdr old)))
               new)))
-     (add-hook 'sh-mode-hook 'jart-sh-mode-hook)
-     (add-hook 'sh-mode-hook 'flyspell-prog-mode)))
+     (add-hook 'sh-mode-hook 'jart-sh-mode-hook)))
 
 (eval-after-load 'coffee-mode
   '(progn
@@ -1009,8 +1079,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
      (add-hook 'c-mode-common-hook 'google-set-c-style)
      (add-hook 'c-mode-common-hook 'google-make-newline-indent)
      (add-hook 'c-mode-common-hook 'jart-c-mode-common-hook)
-     (add-hook 'c++-mode-hook 'jart-c++-mode-hook)
-     (add-hook 'c++-mode-hook 'flyspell-prog-mode)))
+     (add-hook 'c++-mode-hook 'jart-c++-mode-hook)))
 
 (eval-after-load 'lisp-mode
   '(progn
@@ -1024,8 +1093,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
      (add-hook 'emacs-lisp-mode-hook 'enable-paredit-mode)
      (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
      (add-hook 'emacs-lisp-mode-hook 'jart-remove-elc-on-save)
-     (add-hook 'emacs-lisp-mode-hook 'jart-pretty-lambdas)
-     (add-hook 'emacs-lisp-mode-hook 'flyspell-prog-mode)))
+     (add-hook 'emacs-lisp-mode-hook 'jart-pretty-lambdas)))
 
 (eval-after-load 'paredit
   '(progn
@@ -1081,15 +1149,13 @@ Thanks: Stefan Monnier <foo@acm.org>"
      (defun jart-python-mode-hook ()
        (interactive)
        (flycheck-mode -1))
-     (setq python-indent-offset 2)
      (define-key python-mode-map (kbd "C-c c") 'jart-python-check)
      (define-key python-mode-map (kbd "C-c C") 'jart-python-check-dir)
      (define-key python-mode-map (kbd "C-c l") "lambda")
      (define-key python-mode-map (kbd "M-/") 'hippie-expand)
      (ad-activate 'python-calculate-indentation)
      (add-hook 'python-mode-hook 'jart-pretty-lambdas)
-     (add-hook 'python-mode-hook 'jart-python-mode-hook)
-     (add-hook 'python-mode-hook 'flyspell-prog-mode)))
+     (add-hook 'python-mode-hook 'jart-python-mode-hook)))
 
 (eval-after-load 'autorevert
   '(progn
@@ -1155,6 +1221,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
 ;;   nil
 ;;   "Generic mode for mmm-mode editing .rl files.")
 
-(server-start)
+(require 'server)
+(when (not (server-running-p))
+  (server-start))
 
 ;;; init.el ends here
