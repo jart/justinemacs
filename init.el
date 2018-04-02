@@ -565,7 +565,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
   ('error
    (warn (format "Caught exception: [%s]" exc))))
 
-;; Initialise package manager, which takes time, especially on first run.
+;; Initialize package manager, which takes time, especially on first run.
 (require 'package)
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
