@@ -136,14 +136,14 @@ Thanks: Stefan Monnier <foo@acm.org>"
   "Sort lines within list under cursor."
   (interactive)
   (let* ((start (point))
-         (first-line (condition-case nil
-                         (progn
-                           (backward-up-list)
-                           (string-to-number (format-mode-line "%l")))
-                       ('error)))
-         (last-line (when first-line
-                      (forward-sexp)
-                      (string-to-number (format-mode-line "%l")))))
+         (first-line (save-excursion
+                       (ignore-errors
+                         (when (backward-up-list)
+                           (string-to-number (format-mode-line "%l"))))))
+         (last-line (save-excursion
+                      (when first-line
+                        (forward-sexp)
+                        (string-to-number (format-mode-line "%l"))))))
     (when (and first-line (> (- last-line first-line)))
       (sort-lines nil
                   (progn
@@ -186,57 +186,90 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (defun jart-open-url (&optional url)
   "Open URL under cursor."
   (interactive)
-  (let ((link (or url (thing-at-point-url-at-point))))
-    (when (not (jart--url-exists link))
-      (error "does not exist"))
-    (when (not (string-match "/\\([^/]+\\)$" link))
-      (error "oh no"))
-    (let ((basename (match-string 1 link)))
-      (shell-command-to-string
-       (format "wget -qO /tmp/%s %s" basename link))
-      (find-file (format "/tmp/%s" basename)))))
-
-(defun jart--url-exists (url)
-  "Return nil if URL does not return a 200 OK response."
-  (string-match "^HTTP.*\\b200\\b"
-                (shell-command-to-string
-                 (format "curl -sIL %s" url))))
+  (let* ((url (or url (thing-at-point-url-at-point)
+                  (user-error "No URL at point")))
+         (path (concat "/tmp/" (file-name-nondirectory url))))
+    (unless (jart-file-download url path)
+      (error "URL does not exist: %s" url))
+    (find-file path)))
 
 (defun jart-mirror-url (&optional url)
   "Mirror URL under cursor."
   (interactive)
   (let ((link (or url (thing-at-point-url-at-point))))
     (message (format "%s" (async-shell-command
-                           (format "bzmirror %s" link))))))
+                           (format "bzmirror %s"
+                                   (shell-quote-argument link)))))))
 
 (defun jart-mirror-check ()
   "Check mirror URLs in current buffer."
   (interactive)
-  (save-buffer)
   (async-shell-command
-   (format "check-mirror-urls %s" (buffer-file-name))))
+   (format "check-mirror-urls %s" (shell-quote-argument (buffer-file-name)))))
 
 (defun jart-copy-checksum-url (&optional url)
   "Download URL and put its sha256 on the kill ring."
   (interactive)
-  (let* ((link (or url (thing-at-point-url-at-point)))
-         (sha256 (format "%s" (shell-command-to-string
-                               (format "summy %s" link)))))
+  (let* ((url (or url (thing-at-point-url-at-point)))
+         (path (make-temp-file "jart-copy-checksum-url"))
+         (sha256 (and (jart-file-download url path)
+                      (jart-file-sha256 path))))
+    (delete-file path nil)
+    (unless sha256
+      (error "Could not download and sha256: %s" url))
     (jart--replace-nearest-sha256 sha256)
     (kill-new sha256)
     (message sha256)))
 
-(defun jart-change-version (&optional url)
-  "Show list of git tags associated with URL."
+(defun jart-url-exists (url)
+  "Return nil if URL does not return a 200 OK response."
+  (when url
+    (with-temp-buffer
+      (and (= 0 (call-process
+                 "curl" nil (list (current-buffer) nil) nil
+                 "-sIL" url))
+           (search-backward-regexp "^HTTP.*\\b200\\b")))))
+
+(defun jart-file-download (url path)
+  "Download URL to PATH or return nil."
+  (when (and url path)
+    (= 0 (cond ((executable-find "curl")
+                (call-process
+                 "curl" nil `((:file ,(file-truename path)) nil) nil
+                 "-sfL" url))
+               ((executable-find "wget")
+                (call-process
+                 "wget" nil `((:file ,(file-truename path)) nil) nil
+                 "-qO" "-" url))
+               (t (error "Could not find curl or wget"))))))
+
+(defun jart-file-sha256 (path)
+  "Return sha256 checksum of contents of PATH or nil."
+  (when path
+    (let ((cmd (executable-find "sha256sum")))
+      (unless cmd
+        (unless (setq cmd (executable-find "shasum"))
+          (error "Could not find sha256sum or shasum"))
+        (setq cmd (concat cmd " -a 256")))
+      (let ((output (shell-command-to-string
+                     (format "%s %s" cmd (shell-quote-argument path)))))
+        (when (string-match "\\`\\([0-9a-f]\\{64\\}\\) " output)
+          (match-string 1 output))))))
+
+(defun jart-change-version ()
+  "Upgrade Bazel workspace definition around URL at point."
+  ;; TODO: Add support for upgrading GitHub URLs with a SHA.
   (interactive)
-  (let* ((link (or url (thing-at-point-url-at-point)))
-         (old (jart--extract-revision link))
+  (let* ((url (or (thing-at-point-url-at-point)
+                  (error "No URL at point" url)))
+         (old (or (jart-extract-version url)
+                  (error "No version found: %s" url)))
          (tag (ido-completing-read
-               "Pick a tag: " (jart--git-ls-remote-tags
-                               (jart--as-github-uri link))))
-         (new (if (equal "v" (substring tag 0 1))
-                  (substring tag 1)
-                tag)))
+               "Pick a tag: "
+               (jart-git-ls-remote-tags
+                (or (jart-extract-github-uri url)
+                    (error "No GitHub URI in: %s" text)))))
+         (new (jart-remove-prefixes tag '("v"))))
     (let* ((spot (point))
            (bounds (if (use-region-p)
                        (cons (region-beginning) (region-end))
@@ -246,61 +279,105 @@ Thanks: Stefan Monnier <foo@acm.org>"
       (delete-region (car bounds) (cdr bounds))
       (insert (replace-regexp-in-string (regexp-quote old) new text))
       (goto-char spot)
-      (when (jart--url-exists (thing-at-point-url-at-point))
+      (when (jart-url-exists (thing-at-point-url-at-point))
         (jart-copy-checksum-url)))))
 
-(defun jart--as-github-uri (text)
+(defun jart-remove-prefixes (string prefixes)
+  "Return STRING with PREFIXES removed in order."
+  (when string
+    (let ((p 0))
+      (dolist (prefix prefixes)
+        (when (and (>= (- (length string) p) (length prefix))
+                   (equal prefix (substring string p (+ p (length prefix)))))
+          (setq p (+ p (length prefix)))))
+      (substring string p))))
+
+(defun jart-remove-suffixes (string suffixes)
+  "Return STRING with SUFFIXES removed in order."
+  (when string
+    (let ((p (length string)))
+      (dolist (suffix suffixes)
+        (message "%S %S" (length suffix) p)
+        (when (and (>= p (length suffix))
+                   (equal suffix (substring string (- p (length suffix)))))
+          (setq p (- p (length suffix)))))
+      (substring string 0 p))))
+
+(defconst jart-version-semver-regexp
+  (concat "\\(0\\|[1-9][0-9]*\\)\\."  ;; 1. major
+          "\\(0\\|[1-9][0-9]*\\)\\."  ;; 2. minor
+          "\\(0\\|[1-9][0-9]*\\)"     ;; 3. patch
+          "\\(?:-\\("                 ;; 4. pre-release
+          "\\(?:0\\|[1-9][0-9]*\\|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*\\)"
+          "\\(?:\\.(0\\|[1-9][0-9]*\\|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)\\)*"
+          "\\)\\)?"
+          "\\(?:\\+\\("               ;; 5. build metadata
+          "[0-9a-zA-Z-]+"
+          "\\(\\.[0-9a-zA-Z-]+\\)*"
+          "\\)\\)?")
+  "Regular expression matching Semantic Version strings.")
+
+(defconst jart-version-pep440-regexp
+  (concat "\\(?:"
+          "\\(?:\\(?6:[0-9]+\\)!\\)?"            ;; 6. epoch
+          "\\(?1:0\\|[1-9][0-9]*\\)\\."          ;; 1. major
+          "\\(?2:0\\|[1-9][0-9]*\\)"             ;; 2. minor
+          "\\(?:\\.\\(?3:0\\|[1-9][0-9]*\\)\\)?" ;; 3. micro
+          "\\(?:[-_.]?"                          ;; 7. pre-release category
+          "\\(?7:a\\|b\\|c\\|rc\\|alpha\\|beta\\|pre\\|preview\\)"
+          "\\(?:[-_.]?\\(?4:[0-9]+\\)?\\)"       ;; 4. pre-release number
+          "\\)?"
+          "\\(?:"                                ;; 8. post release category
+          "\\(?:-\\(?9:[0-9]+\\)\\)\\|"          ;; 9. post release number
+          "\\(?:[-_.]?"
+          "\\(?8:post\\|rev\\|r\\)"
+          "[-_.]?\\(?9:[0-9]+\\)?\\)"
+          "\\)?"
+          "\\(?:[-_.]?"                          ;; 10. dev release word
+          "\\(?10:dev\\)[-_.]?\\(?11:[0-9]+\\)?" ;; 11. dev release number
+          "\\)?"
+          "\\)"
+          "\\(?:\\+"                             ;; 5. local version
+          "\\(?5:[a-z0-9]+\\(?:[-_.][a-z0-9]+\\)*\\)"
+          "\\)?")
+  "Regular expression matching Python version strings.")
+
+(defcustom jart-version-ignore-suffixes
+  '(".zip"
+    ".gz"
+    ".bz2"
+    ".xz"
+    ".tar")
+  "List of strings to chop from versions."
+  :type '(repeat string)
+  :group 'jart)
+
+(defun jart-extract-version (string)
+  "Return version from STRING or returns nil."
+  (jart-remove-suffixes
+   (cond ((string-match jart-version-semver-regexp string)
+          (match-string 0 string))
+         ((string-match jart-version-pep440-regexp string)
+          (match-string 0 string)))
+   jart-version-ignore-suffixes))
+
+(defun jart-extract-github-uri (text)
+  "Return list of tags associated with git URI or returns nil."
+  (when text
+    (when (string-match "github.com[/:]\\([^/]+\\)/\\([^/.]+\\)[/.]" text)
+      (concat "git://github.com/"
+              (match-string 1 text) "/"
+              (match-string 2 text) ".git"))))
+
+(defun jart-git-ls-remote-tags (uri)
   "Return list of tags associated with git URI."
-  (when (not (string-match "github.com[/:]\\([^/]+\\)/\\([^/.]+\\)[/.]" text))
-    (error "oh no"))
-  (concat "git://github.com/"
-          (match-string 1 text) "/"
-          (match-string 2 text) ".git"))
-
-(defun jart--git-ls-remote-tags (uri)
-  "Return list of tags associated with git URI."
-  (reverse
-   (sort (split-string
-          (shell-command-to-string
-           (concat "git ls-remote --tags " uri
-                   " | grep -Po '(?<=refs/tags/)[^^]+'")))
-         'jart--semver<)))
-
-(defun jart--extract-revision (url)
-  "Return version tag from URL or dies."
-  (when (not (string-match "[0-9]+\\.[0-9]+\\.[0-9]+" url))
-    (error (format "no version found: %s" url)))
-  (match-string 0 url))
-
-(defun jart--semver< (a b &optional op)
-  "Return t if semantic version A is less than B."
-  (condition-case exc
-      (jart--list< (jart--semver-split a)
-                   (jart--semver-split b))
-    ('error
-     (error (format "%s on %s vs. %s aka %S vs. %S"
-                    exc a b (jart--semver-split a)
-                   (jart--semver-split b))))))
-
-(defun jart--semver-split (v)
-  "Split V in a semver fancy way."
-  (mapcar (lambda (x)
-            (if (string-match "^[0-9]+$" x)
-                (string-to-number x)
-              x))
-          (split-string v "[v.-]" t)))
-
-(defun jart--list< (a b)
-  "Return t if A < B as flat lists of strings and numbers."
-  (cond ((null a) (not (null b)))
-        ((null b) nil)
-        ((stringp (car a))
-         (cond ((not (stringp (car b))) t)
-               ((string= (car a) (car b)) (jart--list< (cdr a) (cdr b)))
-               (t (string< (car a) (car b)))))
-        ((stringp (car b)) t)
-        ((= (car a) (car b)) (jart--list< (cdr a) (cdr b)))
-        (t (< (car a) (car b)))))
+  (sort (split-string
+         (shell-command-to-string
+          (concat "git ls-remote --tags " (shell-quote-argument uri)
+                  " | perl -nle 'print $& if m{(?<=refs/tags/)[^^]+}'")))
+        (lambda (a b)
+          (not (version< (jart-remove-prefixes a '("v"))
+                         (jart-remove-prefixes b '("v")))))))
 
 (defun jart--replace-nearest-sha256 (sha256)
   (interactive)
@@ -866,7 +943,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (setq web-mode-engines-alist '(("angular" . "\\.\\(html\\|xml\\)\\'")
                                ("angular" . "\\.ng\\'")))
 (add-to-list 'auto-mode-alist '("\\.js$" . js2-mode))
-;; (add-to-list 'auto-mode-alist '("\\.rl$" . mmm-mode))
 
 (eval-after-load 'markdown-mode
   '(progn
@@ -1181,8 +1257,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
 ;;     :back "\n"
 ;;     :include-front t
 ;;     :insert ((?\  ragel-block nil @ "%% " @ "" _ "" @ "\n" @)))))
-;; (mmm-add-mode-ext-class 'go-mode nil 'ragel)
-
 ;; (define-generic-mode 'ragel-mode
 ;;   '(?#) ;; Comments
 ;;   '(
@@ -1220,6 +1294,8 @@ Thanks: Stefan Monnier <foo@acm.org>"
 ;;   nil ;'(".rl\\'")
 ;;   nil
 ;;   "Generic mode for mmm-mode editing .rl files.")
+;; (add-to-list 'auto-mode-alist '("\\.rl$" . mmm-mode))
+;; (mmm-add-mode-ext-class 'go-mode nil 'ragel)
 
 (require 'server)
 (when (not (server-running-p))
