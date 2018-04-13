@@ -588,6 +588,54 @@ jpeg9a, get reverse `string<' ordered at the bottom of the list."
     (setq ispell-pdict-modified-p '(t))
     (ispell-pdict-save t t)))
 
+(defun jart-python-fill-paragraph ()
+  "Wrap paragraph in Google style Python docstrings."
+  (interactive)
+  (end-of-line)
+  (if (jart--is-in-python-docstring-section-paragraph)
+      (fill-region (save-excursion
+                     (search-backward-regexp "^ +[a-zA-Z0-9_]+:" nil t)
+                     (when (looking-at " +\\(Returns\\|Yields\\):")
+                       (forward-line))
+                     (search-forward-regexp "[a-zA-Z0-9_]" nil t)
+                     (- (point) 1))
+                   (save-excursion
+                     (search-forward-regexp
+                      "^ +[a-zA-Z0-9_]+:\\|^ +\"\"\"" nil t)
+                     (beginning-of-line)
+                     (goto-char (- (point) 1))
+                     (point)))
+    (fill-paragraph)))
+
+(defun jart--is-in-python-docstring-section-paragraph ()
+  (when (eq (face-at-point) 'font-lock-doc-face)
+    (let* ((docstring-point
+            (save-excursion
+              (when (search-backward-regexp "\"\"\"" nil t)
+                (point))))
+           (docstring-offset
+            (save-excursion
+              (when docstring-point
+                (goto-char docstring-point)
+                (beginning-of-line)
+                (- docstring-point (point)))))
+           (paragraph-offset
+            (save-excursion
+              (end-of-line)
+              (when (and docstring-point
+                         (search-backward-regexp "^ +[a-zA-Z0-9_]+:" nil t)
+                         (> (progn
+                              (when (looking-at " +\\(Returns\\|Yields\\):")
+                                (forward-line))
+                              (search-forward-regexp "[a-zA-Z0-9_]" nil t)
+                              (goto-char (- (point) 1))
+                              (point))
+                            docstring-point))
+                (- (point) (progn (beginning-of-line) (point)))))))
+      (and paragraph-offset
+           docstring-offset
+           (> paragraph-offset docstring-offset)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Key Bindings
 
@@ -1364,16 +1412,18 @@ jpeg9a, get reverse `string<' ordered at the bottom of the list."
                  (ignore-errors (backward-sexp))
                  (setq ad-return-value (current-indentation)))
              ad-do-it))))
-     (defun jart-python-mode-hook ()
-       (interactive)
-       (flycheck-mode -1))
+     (defun jart--python-mode-hook ()
+       (flycheck-mode -1)
+       (set (make-local-variable 'fill-column) 72))
      (define-key python-mode-map (kbd "C-c c") 'jart-python-check)
      (define-key python-mode-map (kbd "C-c C") 'jart-python-check-dir)
      (define-key python-mode-map (kbd "C-c l") "lambda")
      (define-key python-mode-map (kbd "M-/") 'hippie-expand)
+     (define-key python-mode-map (kbd "C-M-h") 'backward-kill-word)
+     (define-key python-mode-map (kbd "M-q") 'jart-python-fill-paragraph)
      (ad-activate 'python-calculate-indentation)
      (add-hook 'python-mode-hook 'jart-pretty-lambdas)
-     (add-hook 'python-mode-hook 'jart-python-mode-hook)))
+     (add-hook 'python-mode-hook 'jart--python-mode-hook)))
 
 (eval-after-load 'autorevert
   '(progn
