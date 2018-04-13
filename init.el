@@ -33,7 +33,13 @@
 
 ;;; Code:
 
+(defvar dotfiles-dir
+  (file-name-directory
+   (or (buffer-file-name) load-file-name))
+  "Location of Emacs configuration")
+
 (defun jart-sudo (&optional path)
+  "Reopen PATH (or current file) with root privileges."
   (interactive)
   (find-alternate-file
    (concat "/sudo:root@localhost:" (or path buffer-file-name))))
@@ -72,6 +78,13 @@ Thanks: Stefan Monnier <foo@acm.org>"
   "Callback to turn off ugly toolbar."
   (tool-bar-mode -1))
 
+(defun jart-isearch-show-all-matches ()
+  "Shows grep results during a C-s search."
+  (interactive)
+  (let ((case-fold-search isearch-case-fold-search))
+    (occur (if isearch-regexp isearch-string
+             (regexp-quote isearch-string)))))
+
 (defun jart-face-at-point ()
   "Tell me who is responsible for ugly color under cursor."
   (interactive)
@@ -79,21 +92,28 @@ Thanks: Stefan Monnier <foo@acm.org>"
            (face-documentation (face-at-point))))
 
 (defun jart-paredit-close-parenthesis ()
-  "Make the ')' key in `paredit-mode' more resilient to failure."
+  "Reliably insert closing parenthesis."
   (interactive)
-  (condition-case nil
-      (paredit-close-parenthesis)
-    ('error
-     (insert ")"))))
+  (let ((p (point)))
+    (condition-case nil
+        (paredit-close-parenthesis)
+      ('error
+       (insert ")")
+       (jart-show-note "unbalanced")))
+    (goto-char (+ p 1))))
 
-(defun jart-paredit-close-parenthesis-and-newline ()
-  "How do you expect me to rebalance my parens if you won't let
-  me type omg!"
+(defun jart-note ()
+  "Open a new note entry in my notes file."
   (interactive)
-  (condition-case nil
-      (paredit-close-parenthesis-and-newline)
-    ('error
-     (insert ")"))))
+  (find-file "~/notes.org")
+  (goto-char (point-min))
+  (org-insert-heading)
+  (insert (concat "<" (format-time-string "%Y-%m-%dT%H:%M:%S%z") "> ")))
+
+(defun jart-compile-elc ()
+  "Compile Emacs Lisp files in current directory."
+  (interactive)
+  (byte-recompile-directory "." 0 t))
 
 (defun jart-remove-elc-on-save ()
   "If you're saving an elisp file, likely the .elc is no longer valid."
@@ -132,29 +152,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (or (jart-sort-list-at-point)
       (jart-sort-block-at-point)))
 
-(defun jart-sort-list-at-point ()
-  "Sort lines within list under cursor."
-  (interactive)
-  (let* ((start (point))
-         (first-line (save-excursion
-                       (ignore-errors
-                         (when (backward-up-list)
-                           (string-to-number (format-mode-line "%l"))))))
-         (last-line (save-excursion
-                      (when first-line
-                        (forward-sexp)
-                        (string-to-number (format-mode-line "%l"))))))
-    (when (and first-line (> (- last-line first-line)))
-      (sort-lines nil
-                  (progn
-                    (goto-line (+ first-line 1))
-                    (point))
-                  (progn
-                    (goto-line (- last-line 1))
-                    (end-of-line)
-                    (point)))
-      (goto-char start))))
-
 (defun jart-sort-block-at-point ()
   "Sort lines within block under cursor."
   (interactive)
@@ -164,6 +161,29 @@ Thanks: Stefan Monnier <foo@acm.org>"
          (end (progn (forward-paragraph) (point))))
      (sort-lines nil beg end)
      (goto-char start))))
+
+(defun jart-sort-list-at-point ()
+  "Sort lines within list under cursor."
+  (interactive)
+  (let (r a b (p (point)))
+    (ignore-errors
+      (end-of-line)
+      (backward-up-list)
+      (setq a (string-to-number (format-mode-line "%l")))
+      (forward-sexp)
+      (setq b (string-to-number (format-mode-line "%l"))))
+    (when (and a b (> (- b a) 1))
+      (sort-lines nil
+                  (progn
+                    (goto-line (+ a 1))
+                    (point))
+                  (progn
+                    (goto-line (- b 1))
+                    (end-of-line)
+                    (point)))
+      (setq r t))
+    (goto-char p)
+    r))
 
 (defun jart-sane-forward-paragraph ()
   "Move to next blank line."
@@ -297,7 +317,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (when string
     (let ((p (length string)))
       (dolist (suffix suffixes)
-        (message "%S %S" (length suffix) p)
         (when (and (>= p (length suffix))
                    (equal suffix (substring string (- p (length suffix)))))
           (setq p (- p (length suffix)))))
@@ -370,14 +389,29 @@ Thanks: Stefan Monnier <foo@acm.org>"
               (match-string 2 text) ".git"))))
 
 (defun jart-git-ls-remote-tags (uri)
-  "Return list of tags associated with git URI."
+  "Return sorted list of tags associated with git URI.
+
+The returned list is reverse ordered. Priority is given to tags
+meeting Emacs' definition of versioning. All other strings, e.g.
+jpeg9a, get reverse `string<' ordered at the bottom of the list."
   (sort (split-string
          (shell-command-to-string
           (concat "git ls-remote --tags " (shell-quote-argument uri)
                   " | perl -nle 'print $& if m{(?<=refs/tags/)[^^]+}'")))
         (lambda (a b)
-          (not (version< (jart-remove-prefixes a '("v"))
-                         (jart-remove-prefixes b '("v")))))))
+          (let ((la (ignore-errors
+                      (version-to-list (jart-remove-prefixes a '("v")))))
+                (lb (ignore-errors
+                      (version-to-list (jart-remove-prefixes b '("v"))))))
+            (if (and la lb)
+                (not (version-list-< la lb))
+              (if (or la lb)
+                  la
+                (not (string< a b))))))))
+
+(defun jart--remove-non-numeric-prefix-chars (s)
+  "Remove anything that isn't a digit from beginning of S."
+  (replace-regexp-in-string "\\`[^0-9]*" "" s))
 
 (defun jart--replace-nearest-sha256 (sha256)
   (interactive)
@@ -554,6 +588,9 @@ Thanks: Stefan Monnier <foo@acm.org>"
     (setq ispell-pdict-modified-p '(t))
     (ispell-pdict-save t t)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Key Bindings
+
 (global-set-key (kbd "C--") 'undo)
 (global-set-key (kbd "C-t") 'jart-yas-expand)
 (global-set-key (kbd "C-s") 'isearch-forward-regexp)
@@ -618,29 +655,52 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (global-set-key (kbd "<f10>") 'compile)
 (global-set-key (kbd "C-<f10>") 'gdb)
 (global-set-key (kbd "C-x <f10>") 'jart-fix-gdb-gui)
-(define-key minibuffer-local-map (kbd "C-p") 'previous-history-element)
+
+(define-key isearch-mode-map (kbd "C-o") 'jart-isearch-show-all-matches)
 (define-key minibuffer-local-map (kbd "C-n") 'next-history-element)
+(define-key minibuffer-local-map (kbd "C-p") 'previous-history-element)
 
 (when window-system
   (global-set-key (kbd "C-+") 'text-scale-increase)
   (global-set-key (kbd "C-_") 'text-scale-decrease))
 
 ;; Justine's special key-bindings you probably don't want.
-(keyboard-translate ?\C-u ?\C-x)
-(keyboard-translate ?\C-x ?\C-u)
-(global-set-key (kbd "C-h") 'delete-backward-char)
-(global-set-key (kbd "M-h") 'backward-kill-word)
-(global-set-key (kbd "C-x C-h") 'help)
-(global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
-(global-set-key (kbd "C-x C-g") 'grep-find)
-(global-set-key (kbd "C-x b") 'ibuffer)
-(global-unset-key (kbd "C-/"))
+(when (string= (getenv "USER") "jart")
+  (keyboard-translate ?\C-u ?\C-x)
+  (keyboard-translate ?\C-x ?\C-u)
+  (global-set-key (kbd "C-h") 'delete-backward-char)
+  (global-set-key (kbd "M-h") 'backward-kill-word)
+  (global-set-key (kbd "C-x C-h") 'help)
+  (global-set-key (kbd "C-x C-b") 'ido-switch-buffer)
+  (global-set-key (kbd "C-x C-g") 'grep-find)
+  (global-set-key (kbd "C-x b") 'ibuffer)
+  (global-unset-key (kbd "C-/")))
 
-;; Fix cosmetics quickly and reliably.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Initialization
+
 (random t)
+(add-to-list 'load-path (concat dotfiles-dir "lisp"))
+(add-to-list 'custom-theme-load-path (concat dotfiles-dir "themes"))
 (prefer-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
+
+(setq-default
+ c-basic-offset 2
+ c-file-style nil
+ coffee-tab-width 2
+ compile-command "blaze test :*"
+ css-indent-offset 2
+ fill-column 79
+ indent-tabs-mode nil
+ save-place t
+ tab-width 2
+ truncate-lines t)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fix cosmetics quickly and reliably.
+
 (defalias 'yes-or-no-p 'y-or-n-p)
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
 (if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
@@ -669,8 +729,13 @@ Thanks: Stefan Monnier <foo@acm.org>"
           (load-theme 'tango-dark t))))
   ('error
    (warn (format "Caught exception: [%s]" exc))))
+(delete 'try-expand-line hippie-expand-try-functions-list)
+(delete 'try-expand-list hippie-expand-try-functions-list)
+(add-to-list 'completion-ignored-extensions ".d")  ;; "cc -MD" depends files
 
-;; Initialize package manager, which takes time, especially on first run.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Package Management
+
 (require 'package)
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.milkbox.net/packages/") t)
@@ -679,44 +744,120 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (package-refresh-contents)
   (jart-require-packages
    '(pager
+     magit
+     markdown-mode
      pager-default-keybindings
      paredit
      web-mode
-     markdown-mode
-     magit
      js2-mode)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Custom Settings
 
 (setq magit-last-seen-setup-instructions "1.4.0")
 
-;; Custom settings.
 (custom-set-variables
  '(ac-auto-show-menu 0.01)
  '(ac-candidate-menu-min 1)
  '(ac-dictionary-directories nil)
  '(ac-dictionary-files nil)
  '(ac-js2-evaluate-calls nil)
+  '(ac-js2-external-libraries
+   '("/closure/base.js"
+     "/closure/debug/error.js"
+     "/closure/dom/nodetype.js"
+     "/closure/string/string.js"
+     "/closure/asserts/asserts.js"
+     "/closure/array/array.js"
+     "/closure/dom/classlist.js"
+     "/closure/functions/functions.js"
+     "/closure/math/math.js"
+     "/closure/math/coordinate.js"
+     "/closure/math/size.js"
+     "/closure/object/object.js"
+     "/closure/labs/useragent/util.js"
+     "/closure/labs/useragent/browser.js"
+     "/closure/labs/useragent/engine.js"
+     "/closure/useragent/useragent.js"
+     "/closure/dom/browserfeature.js"
+     "/closure/dom/tagname.js"
+     "/closure/dom/dom.js"
+     "/closure/disposable/idisposable.js"
+     "/closure/disposable/disposable.js"
+     "/closure/debug/entrypointregistry.js"
+     "/closure/reflect/reflect.js"
+     "/closure/events/browserfeature.js"
+     "/closure/events/eventid.js"
+     "/closure/events/event.js"
+     "/closure/events/eventtype.js"
+     "/closure/events/browserevent.js"
+     "/closure/events/listenable.js"
+     "/closure/events/listener.js"
+     "/closure/events/listenermap.js"
+     "/closure/events/events.js"
+     "/closure/events/eventhandler.js"
+     "/closure/history/eventtype.js"
+     "/closure/events/eventtarget.js"
+     "/closure/memoize/memoize.js"
+     "/closure/timer/timer.js"
+     "/closure/history/event.js"
+     "/closure/history/history.js"
+     "/closure/structs/inversionmap.js"
+     "/closure/i18n/graphemebreak.js"
+     "/closure/format/format.js"
+     "/closure/dom/tags.js"
+     "/closure/i18n/bidi.js"
+     "/closure/string/typedstring.js"
+     "/closure/string/const.js"
+     "/closure/html/safestyle.js"
+     "/closure/html/safeurl.js"
+     "/closure/html/safehtml.js"
+     "/closure/html/trustedresourceurl.js"
+     "/closure/html/legacyconversions.js"
+     "/closure/i18n/bidiformatter.js"
+     "/closure/html/uncheckedconversions.js"
+     "/closure/soy/data.js"
+     "/closure/soy/soy.js"
+     "/closure/string/stringbuffer.js"
+     "/closure/json/json.js"
+     "/closure/structs/collection.js"
+     "/closure/iter/iter.js"
+     "/closure/structs/map.js"
+     "/closure/structs/structs.js"
+     "/closure/structs/set.js"
+     "/closure/debug/debug.js"
+     "/closure/debug/logrecord.js"
+     "/closure/debug/logbuffer.js"
+     "/closure/debug/logger.js"
+     "/closure/log/log.js"
+     "/closure/uri/utils.js"
+     "/closure/net/errorcode.js"
+     "/closure/net/eventtype.js"
+     "/closure/net/httpstatus.js"
+     "/closure/net/xhrlike.js"
+     "/closure/net/xmlhttpfactory.js"
+     "/closure/net/wrapperxmlhttpfactory.js"
+     "/closure/net/xmlhttp.js"
+     "/closure/net/xhrio.js"
+     "/closure/uri/uri.js"))
  '(ac-trigger-key "C-i")
  '(ac-use-fuzzy nil)
  '(c-basic-offset 2)
  '(c-file-style nil)
  '(c-font-lock-extra-types
-   '(
-
-    "FILE"
-    "Lisp_Object"
-    "\\sw+_t"
-    "bool"
-    "complex"
-    "complex128"
-    "complex64"
-    "imaginary"
-    "jmp_buf"
-    "lconv"
-    "tm"
-    "u?int[136]?[862]"
-    "va_list"
-
-    ))
+   '("FILE"
+     "Lisp_Object"
+     "\\sw+_t"
+     "bool"
+     "complex"
+     "complex128"
+     "complex64"
+     "imaginary"
+     "jmp_buf"
+     "lconv"
+     "tm"
+     "u?int[136]?[862]"
+     "va_list"))
  '(coffee-tab-width 2)
  '(color-theme-is-global t)
  '(column-number-mode t)
@@ -864,28 +1005,45 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(whitespace-style '(face tabs tab-mark lines-tail trailing))
  '(yas-snippet-dirs (list (concat user-emacs-directory "snippets"))))
 
-;; UI enhancements.
-(delete 'try-expand-line hippie-expand-try-functions-list)
-(delete 'try-expand-list hippie-expand-try-functions-list)
-(add-to-list 'completion-ignored-extensions ".d")  ;; "cc -MD" depends files
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Global Modes
 
-;; Enable global modes.
-(ido-mode t)
-(auto-fill-mode 1)
-(show-paren-mode 1)
-(recentf-mode 1)
-(global-font-lock-mode t)
+(require 'ansi-color)
+(require 'ffap)
+(require 'pager)
+(require 'pager-default-keybindings)
+(require 'recentf)
+(require 'saveplace)
+(require 'uniquify)
+
 (auto-compression-mode t)
+(auto-fill-mode 1)
 (delete-selection-mode 1)
-(show-paren-mode 1)
+(global-font-lock-mode t)
 (global-whitespace-mode 1)
-;; (global-git-gutter-mode +1)
-;; (global-auto-revert-mode 1)
+(ido-mode t)
+(recentf-mode 1)
+(show-paren-mode 1)
+(show-paren-mode 1)
 ;; (ac-config-default)
-;; (yas-global-mode 1)
 ;; (add-hook 'after-init-hook #'global-flycheck-mode)
+;; (global-auto-revert-mode 1)
+;; (global-git-gutter-mode +1)
+;; (yas-global-mode 1)
 
-;; Configure Spelling
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Performance Enhancements
+
+;; Stop recursively searching parents when I open a file!
+(setq vc-handled-backends nil)
+(require 'files)
+(defun dir-locals-find-file (file)
+  "Do nothing with FILE."
+  nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Spelling
+
 (setq ispell-program-name
       (or (executable-find "aspell")
           (executable-find "~/homebrew/bin/aspell")))
@@ -905,6 +1063,9 @@ Thanks: Stefan Monnier <foo@acm.org>"
          (add-hook ,(car (cdar modes)) ,(cadr (cdar modes)))))
     (setq modes (cdr modes))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Mode Customization
+
 ;; Make return auto-indent and work inside comments.
 (let ((modes '((cc-mode     java-mode-map        'c-indent-new-comment-line)
                (go-mode     go-mode-map          'newline-and-indent)
@@ -919,15 +1080,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
          (define-key ,(car (cdar modes)) (kbd "<return>") ,(cadr (cdar modes)))
          (define-key ,(car (cdar modes)) (kbd "RET") ,(cadr (cdar modes)))))
     (setq modes (cdr modes))))
-
-;; Load some libraries.
-(require 'saveplace)
-(require 'ffap)
-(require 'uniquify)
-(require 'ansi-color)
-(require 'recentf)
-(require 'pager)
-(require 'pager-default-keybindings)
 
 ;; File extension to mode mappings.
 (add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
@@ -948,15 +1100,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
   '(progn
      (define-key markdown-mode-map (kbd "M-{") 'jart-sane-backward-paragraph)
      (define-key markdown-mode-map (kbd "M-}") 'jart-sane-forward-paragraph)))
-
-;; Performance Improvement: This is another not so great feature that makes
-;; emacs slower by doing a zillion stat() calls every time I open a file.
-(require 'files)
-(defun dir-locals-find-file (file)
-  "Override default function to do nothing with FILE."
-  nil)
-
-;; (require 'cl)
 
 ;; Make return auto-indent and work inside comments.
 (let ((modes '((cc-mode     java-mode-map        'c-indent-new-comment-line)
@@ -1160,6 +1303,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (eval-after-load 'lisp-mode
   '(progn
      (define-key read-expression-map (kbd "TAB") 'completion-at-point)
+     (define-key lisp-mode-shared-map (kbd "C-c C-c") 'jart-compile-elc)
      (define-key lisp-mode-shared-map (kbd "C-c l") "lambda")
      (define-key lisp-mode-shared-map (kbd "RET")
        'reindent-then-newline-and-indent)
@@ -1174,8 +1318,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (eval-after-load 'paredit
   '(progn
      ;; These bindings make paredit easier to use.
-     (define-key paredit-mode-map (kbd "C-<return>")
-       'jart-paredit-close-parenthesis-and-newline)
      (define-key paredit-mode-map (kbd "C-c C-s") 'paredit-forward-slurp-sexp)
      (define-key paredit-mode-map (kbd "C-c C-b") 'paredit-forward-barf-sexp)
      (define-key paredit-mode-map (kbd "C-c C-r") 'paredit-raise-sexp)
