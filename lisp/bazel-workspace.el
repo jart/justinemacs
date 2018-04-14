@@ -61,10 +61,12 @@ This invokes the `bzmirror` command script, so the URL can be
 mirrored to something like a GCS bucket."
   (interactive)
   (if (executable-find "bzmirror")
-      (let ((link (or url (thing-at-point-url-at-point))))
-        (message "%s" (async-shell-command
-                       (format "bzmirror %s"
-                               (shell-quote-argument link)))))
+      (let* ((url (or url (thing-at-point-url-at-point)
+                      (user-error "No URL at point")))
+             (process (format "bzmirror %s" url))
+             (buffer (format "*Mirror %s*" url)))
+        (start-process process buffer "bzmirror" url)
+        (display-buffer buffer '(nil (allow-no-window . t))))
     (warn "bzmirror program not found")))
 
 (defun jart-url-exists (&optional url)
@@ -74,11 +76,12 @@ This function will follow redirects. It should not need to
 download the entire contents of URL in order to determine that it
 exists."
   (interactive)
+  (setq url (or url (thing-at-point-url-at-point)
+                (user-error "No URL at point")))
   (with-temp-buffer
     (and (= 0 (call-process
                "curl" nil (list (current-buffer) nil) nil
-               "-sIL" (or url (thing-at-point-url-at-point)
-                          (user-error "No URL at point"))))
+               "-sIL" url))
          (or (search-backward-regexp "^HTTP.*\\b200\\b" nil t)
              (and (search-forward-regexp "^HTTP.*\\b403\\b" nil t)
                   (jart--url-exists-expensive url))))))
@@ -104,14 +107,18 @@ then a warning is displayed for each one."
       (while (search-forward-regexp "https?://" nil t)
         (let ((url (thing-at-point-url-at-point)))
           (when url
-            (setq urls (cons (thing-at-point-url-at-point) urls))))))
+            (setq urls (cons url urls))))))
     (dolist (url urls)
       (message "Checking %s..." url)
-      (redisplay t)
+      (redisplay)
       (unless (jart-url-exists url)
-        (if (string-match "mirror\\.bazel\\.build/\\(.*\\)" url)
-            (when (yes-or-no-p (format "Want to mirror %s? " url))
-              (jart-url-mirror (concat "http://" (match-string 1 url))))
+        (if (string-match "mirror\\.bazel\\.build/\\([^\"'),]+\\)" url)
+            (let ((original (concat "http://" (match-string 1 url))))
+              (if (and (jart-url-exists original)
+                       (not (equal (substring original -1) "/")))
+                  (when (yes-or-no-p (format "Want to mirror %s? " original))
+                    (jart-url-mirror original))
+                (warn "Evil URL in codebase: %s" url)))
           (warn "Bad URL: %s" url))))
     (message "Done checking URLs!")))
 
