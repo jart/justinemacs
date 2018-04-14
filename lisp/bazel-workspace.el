@@ -62,9 +62,9 @@ mirrored to something like a GCS bucket."
   (interactive)
   (if (executable-find "bzmirror")
       (let ((link (or url (thing-at-point-url-at-point))))
-        (message (format "%s" (async-shell-command
-                               (format "bzmirror %s"
-                                       (shell-quote-argument link))))))
+        (message "%s" (async-shell-command
+                       (format "bzmirror %s"
+                               (shell-quote-argument link)))))
     (warn "bzmirror program not found")))
 
 (defun jart-url-exists (&optional url)
@@ -106,7 +106,7 @@ then a warning is displayed for each one."
           (when url
             (setq urls (cons (thing-at-point-url-at-point) urls))))))
     (dolist (url urls)
-      (message (format "Checking %s..." url))
+      (message "Checking %s..." url)
       (redisplay t)
       (unless (jart-url-exists url)
         (if (string-match "mirror\\.bazel\\.build/\\(.*\\)" url)
