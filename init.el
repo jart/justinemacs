@@ -102,14 +102,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
        (jart-show-note "unbalanced")))
     (goto-char (+ p 1))))
 
-(defun jart-note ()
-  "Open a new note entry in my notes file."
-  (interactive)
-  (find-file "~/notes.org")
-  (goto-char (point-min))
-  (org-insert-heading)
-  (insert (concat "<" (format-time-string "%Y-%m-%dT%H:%M:%S%z") "> ")))
-
 (defun jart-compile-elc ()
   "Compile Emacs Lisp files in current directory."
   (interactive)
@@ -202,245 +194,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
   (interactive)
   (insert "}")
   (indent-for-tab-command))
-
-(defun jart-open-url (&optional url)
-  "Open URL under cursor."
-  (interactive)
-  (let* ((url (or url (thing-at-point-url-at-point)
-                  (user-error "No URL at point")))
-         (path (concat "/tmp/" (file-name-nondirectory url))))
-    (unless (jart-file-download url path)
-      (error "URL does not exist: %s" url))
-    (find-file path)))
-
-(defun jart-mirror-url (&optional url)
-  "Mirror URL under cursor."
-  (interactive)
-  (let ((link (or url (thing-at-point-url-at-point))))
-    (message (format "%s" (async-shell-command
-                           (format "bzmirror %s"
-                                   (shell-quote-argument link)))))))
-
-(defun jart-mirror-check ()
-  "Check mirror URLs in current buffer."
-  (interactive)
-  (async-shell-command
-   (format "check-mirror-urls %s" (shell-quote-argument (buffer-file-name)))))
-
-(defun jart-copy-checksum-url (&optional url)
-  "Download URL and put its sha256 on the kill ring."
-  (interactive)
-  (let* ((url (or url (thing-at-point-url-at-point)))
-         (path (make-temp-file "jart-copy-checksum-url"))
-         (sha256 (and (jart-file-download url path)
-                      (jart-file-sha256 path))))
-    (delete-file path nil)
-    (unless sha256
-      (error "Could not download and sha256: %s" url))
-    (jart--replace-nearest-sha256 sha256)
-    (kill-new sha256)
-    (message sha256)))
-
-(defun jart-url-exists (url)
-  "Return nil if URL does not return a 200 OK response."
-  (when url
-    (with-temp-buffer
-      (and (= 0 (call-process
-                 "curl" nil (list (current-buffer) nil) nil
-                 "-sIL" url))
-           (search-backward-regexp "^HTTP.*\\b200\\b")))))
-
-(defun jart-file-download (url path)
-  "Download URL to PATH or return nil."
-  (when (and url path)
-    (= 0 (cond ((executable-find "curl")
-                (call-process
-                 "curl" nil `((:file ,(file-truename path)) nil) nil
-                 "-sfL" url))
-               ((executable-find "wget")
-                (call-process
-                 "wget" nil `((:file ,(file-truename path)) nil) nil
-                 "-qO" "-" url))
-               (t (error "Could not find curl or wget"))))))
-
-(defun jart-file-sha256 (path)
-  "Return sha256 checksum of contents of PATH or nil."
-  (when path
-    (let ((cmd (executable-find "sha256sum")))
-      (unless cmd
-        (unless (setq cmd (executable-find "shasum"))
-          (error "Could not find sha256sum or shasum"))
-        (setq cmd (concat cmd " -a 256")))
-      (let ((output (shell-command-to-string
-                     (format "%s %s" cmd (shell-quote-argument path)))))
-        (when (string-match "\\`\\([0-9a-f]\\{64\\}\\) " output)
-          (match-string 1 output))))))
-
-(defun jart-change-version ()
-  "Upgrade Bazel workspace definition around URL at point."
-  ;; TODO: Add support for upgrading GitHub URLs with a SHA.
-  (interactive)
-  (let* ((url (or (thing-at-point-url-at-point)
-                  (error "No URL at point" url)))
-         (old (or (jart-extract-version url)
-                  (error "No version found: %s" url)))
-         (tag (ido-completing-read
-               "Pick a tag: "
-               (jart-git-ls-remote-tags
-                (or (jart-extract-github-uri url)
-                    (error "No GitHub URI in: %s" text)))))
-         (new (jart-remove-prefixes tag '("v"))))
-    (let* ((spot (point))
-           (bounds (if (use-region-p)
-                       (cons (region-beginning) (region-end))
-                     (cons (save-excursion (re-search-backward "^$"))
-                           (save-excursion (re-search-forward "^$")))))
-           (text (buffer-substring-no-properties (car bounds) (cdr bounds))))
-      (delete-region (car bounds) (cdr bounds))
-      (insert (replace-regexp-in-string (regexp-quote old) new text))
-      (goto-char spot)
-      (when (jart-url-exists (thing-at-point-url-at-point))
-        (jart-copy-checksum-url)))))
-
-(defun jart-remove-prefixes (string prefixes)
-  "Return STRING with PREFIXES removed in order."
-  (when string
-    (let ((p 0))
-      (dolist (prefix prefixes)
-        (when (and (>= (- (length string) p) (length prefix))
-                   (equal prefix (substring string p (+ p (length prefix)))))
-          (setq p (+ p (length prefix)))))
-      (substring string p))))
-
-(defun jart-remove-suffixes (string suffixes)
-  "Return STRING with SUFFIXES removed in order."
-  (when string
-    (let ((p (length string)))
-      (dolist (suffix suffixes)
-        (when (and (>= p (length suffix))
-                   (equal suffix (substring string (- p (length suffix)))))
-          (setq p (- p (length suffix)))))
-      (substring string 0 p))))
-
-(defconst jart-version-semver-regexp
-  (concat "\\(0\\|[1-9][0-9]*\\)\\."  ;; 1. major
-          "\\(0\\|[1-9][0-9]*\\)\\."  ;; 2. minor
-          "\\(0\\|[1-9][0-9]*\\)"     ;; 3. patch
-          "\\(?:-\\("                 ;; 4. pre-release
-          "\\(?:0\\|[1-9][0-9]*\\|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*\\)"
-          "\\(?:\\.(0\\|[1-9][0-9]*\\|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)\\)*"
-          "\\)\\)?"
-          "\\(?:\\+\\("               ;; 5. build metadata
-          "[0-9a-zA-Z-]+"
-          "\\(\\.[0-9a-zA-Z-]+\\)*"
-          "\\)\\)?")
-  "Regular expression matching Semantic Version strings.")
-
-(defconst jart-version-pep440-regexp
-  (concat "\\(?:"
-          "\\(?:\\(?6:[0-9]+\\)!\\)?"            ;; 6. epoch
-          "\\(?1:0\\|[1-9][0-9]*\\)\\."          ;; 1. major
-          "\\(?2:0\\|[1-9][0-9]*\\)"             ;; 2. minor
-          "\\(?:\\.\\(?3:0\\|[1-9][0-9]*\\)\\)?" ;; 3. micro
-          "\\(?:[-_.]?"                          ;; 7. pre-release category
-          "\\(?7:a\\|b\\|c\\|rc\\|alpha\\|beta\\|pre\\|preview\\)"
-          "\\(?:[-_.]?\\(?4:[0-9]+\\)?\\)"       ;; 4. pre-release number
-          "\\)?"
-          "\\(?:"                                ;; 8. post release category
-          "\\(?:-\\(?9:[0-9]+\\)\\)\\|"          ;; 9. post release number
-          "\\(?:[-_.]?"
-          "\\(?8:post\\|rev\\|r\\)"
-          "[-_.]?\\(?9:[0-9]+\\)?\\)"
-          "\\)?"
-          "\\(?:[-_.]?"                          ;; 10. dev release word
-          "\\(?10:dev\\)[-_.]?\\(?11:[0-9]+\\)?" ;; 11. dev release number
-          "\\)?"
-          "\\)"
-          "\\(?:\\+"                             ;; 5. local version
-          "\\(?5:[a-z0-9]+\\(?:[-_.][a-z0-9]+\\)*\\)"
-          "\\)?")
-  "Regular expression matching Python version strings.")
-
-(defcustom jart-version-ignore-suffixes
-  '(".zip"
-    ".gz"
-    ".bz2"
-    ".xz"
-    ".tar")
-  "List of strings to chop from versions."
-  :type '(repeat string)
-  :group 'jart)
-
-(defun jart-extract-version (string)
-  "Return version from STRING or returns nil."
-  (jart-remove-suffixes
-   (cond ((string-match jart-version-semver-regexp string)
-          (match-string 0 string))
-         ((string-match jart-version-pep440-regexp string)
-          (match-string 0 string)))
-   jart-version-ignore-suffixes))
-
-(defun jart-extract-github-uri (text)
-  "Return list of tags associated with git URI or returns nil."
-  (when text
-    (when (string-match "github.com[/:]\\([^/]+\\)/\\([^/.]+\\)[/.]" text)
-      (concat "git://github.com/"
-              (match-string 1 text) "/"
-              (match-string 2 text) ".git"))))
-
-(defun jart-git-ls-remote-tags (uri)
-  "Return sorted list of tags associated with git URI.
-
-The returned list is reverse ordered. Priority is given to tags
-meeting Emacs' definition of versioning. All other strings, e.g.
-jpeg9a, get reverse `string<' ordered at the bottom of the list."
-  (sort (split-string
-         (shell-command-to-string
-          (concat "git ls-remote --tags " (shell-quote-argument uri)
-                  " | perl -nle 'print $& if m{(?<=refs/tags/)[^^]+}'")))
-        (lambda (a b)
-          (let ((la (ignore-errors
-                      (version-to-list (jart-remove-prefixes a '("v")))))
-                (lb (ignore-errors
-                      (version-to-list (jart-remove-prefixes b '("v"))))))
-            (if (and la lb)
-                (not (version-list-< la lb))
-              (if (or la lb)
-                  la
-                (not (string< a b))))))))
-
-(defun jart--remove-non-numeric-prefix-chars (s)
-  "Remove anything that isn't a digit from beginning of S."
-  (replace-regexp-in-string "\\`[^0-9]*" "" s))
-
-(defun jart--replace-nearest-sha256 (sha256)
-  (interactive)
-  (let ((current (line-number-at-pos))
-        (forward (save-excursion
-                   (when (jart--search-sha256)
-                     (line-number-at-pos))))
-        (backward (save-excursion
-                    (when (jart--search-sha256 t)
-                      (line-number-at-pos)))))
-    (when (or forward backward)
-      (save-excursion
-        (jart--search-sha256
-         (if (and forward backward)
-             (<= (- current backward)
-                 (- forward current))
-           backward))
-        (kill-word nil)
-        (insert sha256)))))
-
-(defun jart--search-sha256 (&optional backwards)
-  (when (eval (cons (if backwards
-                        'search-backward-regexp
-                      'search-forward-regexp)
-                    '("\"[0-9a-f]\\{64\\}\"" nil t)))
-    (if backwards
-        (forward-char)
-      (backward-word))
-    (point)))
 
 (defun jart-python-fill-paragraph ()
   (interactive)
@@ -672,10 +425,11 @@ jpeg9a, get reverse `string<' ordered at the bottom of the list."
 (global-set-key (kbd "C-M-r") 'isearch-backward)
 (global-set-key (kbd "C-c y") 'bury-buffer)
 (global-set-key (kbd "C-c r") 'revert-buffer)
-(global-set-key (kbd "C-c C-o") 'jart-open-url)
-(global-set-key (kbd "C-c m") 'jart-mirror-url)
-(global-set-key (kbd "C-c s") 'jart-copy-checksum-url)
-(global-set-key (kbd "C-c v") 'jart-change-version)
+(global-set-key (kbd "C-c C-o") 'jart-url-open)
+(global-set-key (kbd "C-c m") 'jart-url-mirror)
+(global-set-key (kbd "C-c j") 'jart-url-exists-all)
+(global-set-key (kbd "C-c s") 'jart-url-update-sha256)
+(global-set-key (kbd "C-c v") 'jart-version-change)
 (global-set-key (kbd "C-c C-y") 'magit-blame-mode)
 (global-set-key (kbd "C-c S") 'jart-sort-at-point)
 (global-set-key (kbd "C-x C-r") 'replace-string)
@@ -1057,6 +811,7 @@ jpeg9a, get reverse `string<' ordered at the bottom of the list."
 ;; Global Modes
 
 (require 'ansi-color)
+(require 'bazel-workspace)
 (require 'ffap)
 (require 'pager)
 (require 'pager-default-keybindings)
@@ -1113,6 +868,16 @@ jpeg9a, get reverse `string<' ordered at the bottom of the list."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mode Customization
+
+(eval-after-load 'grep
+  '(progn
+     (grep-apply-setting
+      'grep-command
+      (cond ((file-exists-p "~/homebrew/bin/ggrep")
+             "~/homebrew/bin/ggrep -nH -PRie ")
+            ((memq system-type '(darwin berkeley-unix))
+             "grep -nH -Rie ")
+            (t "grep -nH -PRie ")))))
 
 ;; Make return auto-indent and work inside comments.
 (let ((modes '((cc-mode     java-mode-map        'c-indent-new-comment-line)
