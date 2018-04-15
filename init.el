@@ -534,6 +534,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (delete 'try-expand-line hippie-expand-try-functions-list)
 (delete 'try-expand-list hippie-expand-try-functions-list)
 (add-to-list 'completion-ignored-extensions ".d")  ;; "cc -MD" depends files
+(add-to-list 'completion-ignored-extensions ".test")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Package Management
@@ -928,18 +929,6 @@ Thanks: Stefan Monnier <foo@acm.org>"
          (define-key ,(car (cdar modes)) (kbd "RET") ,(cadr (cdar modes)))))
     (setq modes (cdr modes))))
 
-(add-to-list 'completion-ignored-extensions ".test")
-(defadvice completion--file-name-table (after
-                                        ignoring-backups-f-n-completion
-                                        activate)
-  "Filter out results when they match `completion-ignored-extensions'."
-  (let ((res ad-return-value))
-    (if (and (listp res)
-             (stringp (car res))
-             (cdr res))                 ; length > 1, don't ignore sole match
-        (setq ad-return-value
-              (completion-pcm--filename-try-filter res)))))
-
 (eval-after-load 'web-mode
   '(progn
      (defun jart-web-mode-hook ()
@@ -1072,6 +1061,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
                   (setq new (cons (car old) new)))
                 (setq old (cdr old)))
               new)))
+     (define-key sh-mode-map (kbd "C-c C-o") 'jart-url-open)
      (add-hook 'sh-mode-hook 'jart-sh-mode-hook)))
 
 (eval-after-load 'coffee-mode
