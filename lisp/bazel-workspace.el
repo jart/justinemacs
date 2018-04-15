@@ -93,6 +93,29 @@ exists."
     (delete-file path nil)
     result))
 
+(defvar jart--url-sha256-cache nil)
+
+(defun jart-url-sha256 (url)
+  "Returns sha256 of URL
+
+This invokes the `bzmirror` command script, so the URL can be
+mirrored to something like a GCS bucket."
+  (let* ((key (intern url))
+         (cache (assq key jart--url-sha256-cache)))
+    (if cache
+        (cdr cache)
+      (let* ((path (make-temp-file "jart-copy-checksum-url"))
+             (sha256 (or (and (not (string-match "TODO" url))
+                              (jart-url-exists url)
+                              (jart--url-download url path)
+                              (jart--file-sha256 path))
+                         (make-string 64 ?f))))
+        (delete-file path nil)
+        (setq jart--url-sha256-cache
+              (cons (cons key sha256)
+                    jart--url-sha256-cache))
+        sha256))))
+
 (defun jart-url-exists-all ()
   "Check that all URLs in current buffer exist.
 
@@ -222,6 +245,8 @@ can be updated."
   (let* ((url (or (thing-at-point-url-at-point)
                   (user-error "No URL at point")))
          (old (or (jart-extract-version url)
+                  (and (string-match "/master\\." url)
+                       "master")
                   (user-error "No version found: %s" url)))
          (tag (ido-completing-read
                "Pick a tag: "

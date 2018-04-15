@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name: http_archive()
+# key: ha
+# expand-env: ((yas/indent-line 'auto))
+# contributor: Justine Tunney <jtunney@gmail.com>
+# --
+
+http_archive(
+    name = "${5:$2_$3}",
+    sha256 = "${1:$(jart-url-sha256 yas/text)}",
+    strip_prefix = "$3-${4:$(jart-remove-prefixes yas/text '("v"))}",
+    urls = [
+        "https://mirror.bazel.build/github.com/$2/$3/archive/$4.tar.gz",
+        "${1:https://github$0.com/${2:TODO}/${3:TODO}/archive/${4:TODO}.tar.gz}",
+    ],
+)
