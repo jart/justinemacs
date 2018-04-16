@@ -813,6 +813,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 
 (require 'ansi-color)
 (require 'bazel-workspace)
+(require 'buildifier)
 (require 'ffap)
 (require 'pager)
 (require 'pager-default-keybindings)
