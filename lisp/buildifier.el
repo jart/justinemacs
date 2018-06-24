@@ -41,7 +41,7 @@
   :group 'buildifier)
 
 (defcustom buildifier-path-regex
-  "BUILD\\|WORKSPACE\\|BAZEL"
+  "BUILD$\\|WORKSPACE$\\|BAZEL$"
   "Regular expression describing base paths that need buildifier."
   :type 'string
   :group 'buildifier)

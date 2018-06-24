@@ -541,7 +541,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 
 (require 'package)
 (add-to-list 'package-archives
-             '("melpa" . "http://melpa.milkbox.net/packages/") t)
+             '("melpa-stable" . "https://stable.melpa.org/packages/") t)
 (package-initialize)
 (when (not (package-installed-p 'pager))
   (package-refresh-contents)
@@ -820,6 +820,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (require 'recentf)
 (require 'saveplace)
 (require 'uniquify)
+(require 'column-marker)
 
 (auto-compression-mode t)
 (auto-fill-mode 1)
@@ -898,6 +899,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 
 ;; File extension to mode mappings.
 (add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
+(add-to-list 'auto-mode-alist '("\\.inc$" . c++-mode))
 (add-to-list 'auto-mode-alist '("\\.md$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.markdown$" . markdown-mode))
 (add-to-list 'auto-mode-alist '("\\.gss$" . css-mode))
@@ -1071,6 +1073,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
 
 (eval-after-load 'cc-mode
   '(progn
+     (require 'google-c-style)
      (defun jart-c-mode-common-hook ()
        (define-key c-mode-base-map (kbd "C-c C-c") 'compile)
        (define-key c-mode-base-map (kbd "C-c C-d") 'disaster)
