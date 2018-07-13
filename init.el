@@ -494,7 +494,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  coffee-tab-width 2
  compile-command "blaze test :*"
  css-indent-offset 2
- fill-column 79
+ fill-column 72
  indent-tabs-mode nil
  save-place t
  tab-width 2
@@ -543,16 +543,19 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (add-to-list 'package-archives
              '("melpa-stable" . "https://stable.melpa.org/packages/") t)
 (package-initialize)
-(when (not (package-installed-p 'pager))
+(when (not (package-installed-p 'magit))
   (package-refresh-contents)
   (jart-require-packages
-   '(pager
-     magit
+   '(magit
      markdown-mode
-     pager-default-keybindings
      paredit
+     paredit-everywhere_mm_loadu_si128
      web-mode
-     js2-mode)))
+     js2-mode))
+  (when (version< emacs-version "26.0")
+    (jart-require-packages
+     '(pager
+       pager-default-keybindings))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Settings
@@ -671,7 +674,7 @@ Thanks: Stefan Monnier <foo@acm.org>"
  '(diff-switches "-u")
  '(echo-keystrokes 0.1)
  '(ediff-window-setup-function 'ediff-setup-windows-plain)
- '(fill-column 79)
+ '(fill-column 72)
  '(flycheck-completion-system 'ido)
  '(flycheck-display-errors-delay 0.5)
  '(flycheck-idle-change-delay 0.8)
@@ -815,12 +818,14 @@ Thanks: Stefan Monnier <foo@acm.org>"
 (require 'bazel-workspace)
 (require 'buildifier)
 (require 'ffap)
-(require 'pager)
-(require 'pager-default-keybindings)
 (require 'recentf)
 (require 'saveplace)
 (require 'uniquify)
 (require 'column-marker)
+
+(when (version< emacs-version "26.0")
+  (require 'pager)
+  (require 'pager-default-keybindings))
 
 (auto-compression-mode t)
 (auto-fill-mode 1)
